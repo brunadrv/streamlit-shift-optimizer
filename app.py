@@ -180,6 +180,10 @@ if 'data_initialized' not in st.session_state:
         'Fulfillment': 0,
         'Shipping': 5
     }
+
+    # Weekly Department Details section
+    st.markdown("---")
+    st.markdown('<div class="section-header">Weekly Department Details</div>', unsafe_allow_html=True)
     
     # Shift Summary: Transposed structure with Date, Week Day, Shift, Total Needed, Total Expected, Total Gap, Total Attendance Assumption, Total Punches as ROWS
     st.session_state.shift_summary_transposed = {
@@ -736,9 +740,6 @@ def main():
             st.markdown("**● WW: 20**")
             st.markdown("**● FLEX: 0**")
     
-    # Weekly Department Details section
-    st.markdown("---")
-    st.markdown('<div class="section-header">Weekly Department Details</div>', unsafe_allow_html=True)
     
     # Show gap analysis for selected department
     gap = st.session_state.departments[selected_department]
@@ -770,3 +771,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
