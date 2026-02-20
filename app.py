@@ -24,7 +24,7 @@ st.markdown("""
         margin-bottom: 1rem;
     }
     .location-info {
-        font-size: 1.2rem;
+        font-size: 1rem;
         color: #666;
         margin-bottom: 0.5rem;
     }
@@ -768,6 +768,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
