@@ -181,7 +181,6 @@ if 'data_initialized' not in st.session_state:
         'Shipping': 5
     }
     
-    # EXACT COLUMNS FROM YOUR ORIGINAL REQUEST - NOW TRANSPOSED:
     # Shift Summary: Transposed structure with Date, Week Day, Shift, Total Needed, Total Expected, Total Gap, Total Attendance Assumption, Total Punches as ROWS
     st.session_state.shift_summary_transposed = {
         '2026-02-12 Thu Shift 1': {
@@ -321,7 +320,6 @@ if 'data_initialized' not in st.session_state:
         }
     }
     
-    # EXACT COLUMNS FROM YOUR ORIGINAL REQUEST:
     # Weekly Expected HC Details: Week, Day/Shift, FTE, FTE vs Previous Week, TEMP, Temp vs Previous Week, NEW HIRES, NEW HIRES vs Previous Week, FLEX, FLEX vs Previous Week, WW/GS
     st.session_state.weekly_hc_details = [
         {'Week': '2026-W08', 'Day/Shift': 'Monday/1st', 'FTE': 25, 'FTE vs Previous Week': '+2', 'TEMP': 3, 'Temp vs Previous Week': '+1', 'NEW HIRES': 2, 'NEW HIRES vs Previous Week': '+2', 'FLEX': 5, 'FLEX vs Previous Week': '-1', 'WW/GS': 'WW'},
@@ -575,12 +573,12 @@ def main():
     # Header section - matching mockup layout
     st.markdown('<h1 class="main-header">Labor Planning Shift Optimizer</h1>', unsafe_allow_html=True)
     
-    # All filters at the top - Location, Week, Shift, Department, Date
+    # All filters at the top - Location, Week, Date, Department, Shift
     col1, col2, col3, col4, col5 = st.columns([1, 1, 1.5, 1, 1])
     
     with col1:
         st.markdown("**Location**")
-        location = st.selectbox("", ["AZ Goodyear", "TX Houston", "CA Los Angeles", "FL Tampa", "NY Buffalo"], 
+        location = st.selectbox("", ["AZ Goodyear", "IL Aurora", "AZ Phoenix", "IL Lake Zurich", "IL Burr Ridge"], 
                                index=0, label_visibility="collapsed")
     
     with col2:
@@ -604,7 +602,7 @@ def main():
     
     st.markdown("---")
     
-    # Weekly Overview section title - appears above KPIs
+    # Weekly Overview section
     st.markdown('<div class="section-header">Weekly Overview</div>', unsafe_allow_html=True)
     
     # Key metrics row - All three KPIs: Needed HC, Expected HC, Gap in HC
@@ -635,7 +633,6 @@ def main():
         </div>
         """, unsafe_allow_html=True)
     
-    st.markdown("---")
     
     # Department Gap Comparison - dynamic highlighting based on selected department
     st.markdown('<div class="section-header">Department Gap Comparison</div>', unsafe_allow_html=True)
@@ -665,10 +662,9 @@ def main():
                 color = "#d62728" if gap.startswith('-') else "#2ca02c" if gap != '0' else "#666"
                 st.markdown(f'<div style="padding: 0.5rem; background-color: {bg_color}; text-align: center; border: 1px solid #ddd; color: {color}; font-weight: bold;">{gap}</div>', unsafe_allow_html=True)
     
-    st.markdown("---")
     
-    # Four toggle buttons with built-in highlighting - Fixed single-click solution
-    view_options = ["📊 Shift Summary", "👥 Roster HC Summary", "📋 Roster HC Details", "📈 Attendance Assumption"]
+    # Four toggle buttons with built-in highlighting
+    view_options = ["📊 Shift Summary", "👥 Roster HC Summary", "📈 Attendance Assumption", "📋 Roster HC Details"]
     
     # Use radio directly and let it manage the state
     selected_option = st.radio(
@@ -683,8 +679,8 @@ def main():
     view_mapping = {
         "📊 Shift Summary": "Shift Summary",
         "👥 Roster HC Summary": "Roster HC Summary", 
-        "📋 Roster HC Details": "Roster HC Details",
-        "📈 Attendance Assumption": "Attendance Assumption"
+        "📈 Attendance Assumption": "Attendance Assumption",
+        "📋 Roster HC Details": "Roster HC Details"
     }
     
     # Get the current view from radio selection
@@ -772,4 +768,5 @@ def main():
     st.markdown("**Labor Planning Shift Optimizer** | Data as of " + datetime.now().strftime("%Y-%m-%d %H:%M"))
 
 if __name__ == "__main__":
+
     main()
