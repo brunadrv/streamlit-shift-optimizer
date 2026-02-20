@@ -181,9 +181,6 @@ if 'data_initialized' not in st.session_state:
         'Shipping': 5
     }
 
-    # Weekly Department Details section
-    st.markdown("---")
-    st.markdown('<div class="section-header">Weekly Department Details</div>', unsafe_allow_html=True)
     
     # Shift Summary: Transposed structure with Date, Week Day, Shift, Total Needed, Total Expected, Total Gap, Total Attendance Assumption, Total Punches as ROWS
     st.session_state.shift_summary_transposed = {
@@ -602,12 +599,10 @@ def main():
     
     with col5:
         st.markdown("**Date**")
-        selected_date = st.date_input("", value=pd.to_datetime("2026-02-12"), label_visibility="collapsed")
-    
-    st.markdown("---")
+        selected_date = st.date_input("", value=pd.to_datetime("2026-02-12"), label_visibility="collapsed") 
     
     # Weekly Overview section
-    st.markdown('<div class="section-header">Weekly Overview</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">Overview</div>', unsafe_allow_html=True)
     
     # Key metrics row - All three KPIs: Needed HC, Expected HC, Gap in HC
     col1, col2, col3 = st.columns(3)
@@ -636,8 +631,7 @@ def main():
             ⚠️ <strong>Alert:</strong> Critical staffing shortage detected. Immediate action required.
         </div>
         """, unsafe_allow_html=True)
-    
-    
+        
     # Department Gap Comparison - dynamic highlighting based on selected department
     st.markdown('<div class="section-header">Department Gap Comparison</div>', unsafe_allow_html=True)
     
@@ -665,7 +659,10 @@ def main():
                 bg_color = "#e3f2fd" if dept_name == selected_department else "#f9f9f9"
                 color = "#d62728" if gap.startswith('-') else "#2ca02c" if gap != '0' else "#666"
                 st.markdown(f'<div style="padding: 0.5rem; background-color: {bg_color}; text-align: center; border: 1px solid #ddd; color: {color}; font-weight: bold;">{gap}</div>', unsafe_allow_html=True)
-    
+
+    # Department Details section
+    st.markdown("---")
+    st.markdown('<div class="section-header">Department Details</div>', unsafe_allow_html=True)
     
     # Four toggle buttons with built-in highlighting
     view_options = ["📊 Shift Summary", "👥 Roster HC Summary", "📈 Attendance Assumption", "📋 Roster HC Details"]
@@ -771,4 +768,5 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
