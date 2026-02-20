@@ -154,7 +154,7 @@ st.markdown("""
         margin: 1rem 0;
     }
     .section-header {
-        font-size: 2.5rem;
+        font-size: 1.5rem;
         font-weight: bold;
         color: #2E4057;
         margin: 2rem 0 1rem 0;
@@ -768,6 +768,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
