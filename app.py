@@ -154,7 +154,7 @@ st.markdown("""
         margin: 1rem 0;
     }
     .section-header {
-        font-size: 1.5rem;
+        font-size: 2.5rem;
         font-weight: bold;
         color: #2E4057;
         margin: 2rem 0 1rem 0;
@@ -660,6 +660,7 @@ def main():
                 color = "#d62728" if gap.startswith('-') else "#2ca02c" if gap != '0' else "#666"
                 st.markdown(f'<div style="padding: 0.5rem; background-color: {bg_color}; text-align: center; border: 1px solid #ddd; color: {color}; font-weight: bold;">{gap}</div>', unsafe_allow_html=True)
 
+    
     # Department Details section
     st.markdown('<div class="section-header">Department Details</div>', unsafe_allow_html=True)
     
@@ -767,6 +768,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
