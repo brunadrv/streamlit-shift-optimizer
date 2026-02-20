@@ -181,6 +181,7 @@ if 'data_initialized' not in st.session_state:
         'Shipping': 5
     }
     
+    # EXACT COLUMNS FROM YOUR ORIGINAL REQUEST - NOW TRANSPOSED:
     # Shift Summary: Transposed structure with Date, Week Day, Shift, Total Needed, Total Expected, Total Gap, Total Attendance Assumption, Total Punches as ROWS
     st.session_state.shift_summary_transposed = {
         '2026-02-12 Thu Shift 1': {
@@ -601,6 +602,7 @@ def main():
         st.markdown("**Date**")
         selected_date = st.date_input("", value=pd.to_datetime("2026-02-12"), label_visibility="collapsed")
     
+    st.markdown("---")
     
     # Weekly Overview section title - appears above KPIs
     st.markdown('<div class="section-header">Weekly Overview</div>', unsafe_allow_html=True)
@@ -633,6 +635,7 @@ def main():
         </div>
         """, unsafe_allow_html=True)
     
+    st.markdown("---")
     
     # Department Gap Comparison - dynamic highlighting based on selected department
     st.markdown('<div class="section-header">Department Gap Comparison</div>', unsafe_allow_html=True)
@@ -662,78 +665,26 @@ def main():
                 color = "#d62728" if gap.startswith('-') else "#2ca02c" if gap != '0' else "#666"
                 st.markdown(f'<div style="padding: 0.5rem; background-color: {bg_color}; text-align: center; border: 1px solid #ddd; color: {color}; font-weight: bold;">{gap}</div>', unsafe_allow_html=True)
     
-    # Weekly Department Details section
     st.markdown("---")
-    st.markdown('<div class="section-header">Weekly Department Details</div>', unsafe_allow_html=True)
     
-
-# Four toggle buttons with dynamic highlighting - REPLACE lines 670-687  
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    # Check if this view is selected
-    is_selected = st.session_state.current_view == "Shift Summary"
-    button_type = "primary" if is_selected else "secondary"
+    # Four toggle buttons in the order from mockup
+    col1, col2, col3, col4 = st.columns(4)
     
-    if st.button("📊 Shift Summary", use_container_width=True, type=button_type):
-        st.session_state.current_view = "Shift Summary"
-
-with col2:
-    # Check if this view is selected
-    is_selected = st.session_state.current_view == "Roster HC Summary"
-    button_type = "primary" if is_selected else "secondary"
+    with col1:
+        if st.button("📊 Shift Summary", use_container_width=True):
+            st.session_state.current_view = "Shift Summary"
     
-    if st.button("👥 Roster HC Summary", use_container_width=True, type=button_type):
-        st.session_state.current_view = "Roster HC Summary"
-
-with col3:
-    # Check if this view is selected
-    is_selected = st.session_state.current_view == "Roster HC Details"
-    button_type = "primary" if is_selected else "secondary"
+    with col2:
+        if st.button("👥 Roster HC Summary", use_container_width=True):
+            st.session_state.current_view = "Roster HC Summary"
     
-    if st.button("📋 Roster HC Details", use_container_width=True, type=button_type):
-        st.session_state.current_view = "Roster HC Details"
-
-with col4:
-    # Check if this view is selected
-    is_selected = st.session_state.current_view == "Attendance Assumption"
-    button_type = "primary" if is_selected else "secondary"
+    with col3:
+        if st.button("📋 Roster HC Details", use_container_width=True):
+            st.session_state.current_view = "Roster HC Details"
     
-    if st.button("📈 Attendance Assumption", use_container_width=True, type=button_type):
-        st.session_state.current_view = "Attendance Assumption"
-        
-        # Set colors based on selection
-        bg_color = "#2ca02c" if is_selected else "#1f77b4"  # Green if selected, blue if not
-        text_color = "white"
-        border_color = "#2ca02c" if is_selected else "#1f77b4"
-        
-        # Create custom styled button using HTML
-        button_html = f"""
-        <div style="
-            background-color: {bg_color};
-            color: {text_color};
-            padding: 0.75rem;
-            border: 2px solid {border_color};
-            border-radius: 0.5rem;
-            text-align: center;
-            font-weight: bold;
-            font-size: 0.9rem;
-            cursor: pointer;
-            margin: 0.25rem 0;
-            box-shadow: {'0 4px 8px rgba(0,0,0,0.2)' if is_selected else '0 2px 4px rgba(0,0,0,0.1)'};
-            transition: all 0.3s ease;
-        " onclick="this.style.transform='scale(0.98)'">
-            {btn["icon"]} {btn["label"]}
-        </div>
-        """
-        
-        # Display the styled button and handle clicks
-        st.markdown(button_html, unsafe_allow_html=True)
-        
-        # Use an invisible button for click detection
-        if st.button(f"Select {btn['label']}", key=f"btn_{i}", label_visibility="hidden"):
-            st.session_state.current_view = btn["view"]
-            st.rerun()  # Force refresh to show the highlighting immediately
+    with col4:
+        if st.button("📈 Attendance Assumption", use_container_width=True):
+            st.session_state.current_view = "Attendance Assumption"
     
     # Display selected view with exact tables and tooltips
     if st.session_state.current_view == "Shift Summary":
@@ -785,6 +736,9 @@ with col4:
             st.markdown("**● WW: 20**")
             st.markdown("**● FLEX: 0**")
     
+    # Weekly Department Details section
+    st.markdown("---")
+    st.markdown('<div class="section-header">Weekly Department Details</div>', unsafe_allow_html=True)
     
     # Show gap analysis for selected department
     gap = st.session_state.departments[selected_department]
@@ -797,7 +751,7 @@ with col4:
     
     # Employee details table with exact columns and tooltips
     st.markdown(f"### {selected_department} Employee List")
-    st.markdown("*Detailed employee roster*")
+    st.markdown("*Detailed employee roster with exact columns from mockup*")
     
     fig = create_employee_details_table_with_tooltips(selected_department)
     if fig:
@@ -814,7 +768,4 @@ with col4:
     st.markdown("**Labor Planning Shift Optimizer** | Data as of " + datetime.now().strftime("%Y-%m-%d %H:%M"))
 
 if __name__ == "__main__":
-
     main()
-
-
