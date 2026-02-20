@@ -91,79 +91,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-import plotly.graph_objects as go
-from datetime import datetime, timedelta
-import numpy as np
-
-# Page configuration
-st.set_page_config(
-    page_title="Labor Planning Shift Optimizer",
-    page_icon="🏭",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-
-# Custom CSS for styling
-st.markdown("""
-<style>
-    .main-header {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #2E4057;
-        text-align: left;
-        margin-bottom: 1rem;
-    }
-    .metric-large {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1f77b4;
-    }
-    .metric-change {
-        font-size: 1rem;
-        font-weight: bold;
-    }
-    .metric-change-up {
-        color: #2ca02c;
-    }
-    .metric-change-down {
-        color: #d62728;
-    }
-    .metric-label {
-        font-size: 1rem;
-        color: #666;
-        margin-bottom: 0.5rem;
-    }
-    .gap-negative {
-        color: #d62728;
-        font-size: 2.5rem;
-        font-weight: bold;
-    }
-    .gap-status {
-        color: #d62728;
-        font-size: 1rem;
-        font-weight: bold;
-    }
-    .alert-warning {
-        background-color: #fff3cd;
-        border: 1px solid #ffeaa7;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin: 1rem 0;
-    }
-    .section-header {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #2E4057;
-        margin: 2rem 0 1rem 0;
-        border-bottom: 2px solid #ddd;
-        padding-bottom: 0.5rem;
-    }
-</style>
-""", unsafe_allow_html=True)
-
 # Initialize session state for data
 if 'data_initialized' not in st.session_state:
     st.session_state.data_initialized = True
@@ -768,6 +695,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
