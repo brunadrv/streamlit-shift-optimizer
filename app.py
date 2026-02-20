@@ -181,7 +181,6 @@ if 'data_initialized' not in st.session_state:
         'Shipping': 5
     }
     
-    # EXACT COLUMNS FROM YOUR ORIGINAL REQUEST - NOW TRANSPOSED:
     # Shift Summary: Transposed structure with Date, Week Day, Shift, Total Needed, Total Expected, Total Gap, Total Attendance Assumption, Total Punches as ROWS
     st.session_state.shift_summary_transposed = {
         '2026-02-12 Thu Shift 1': {
@@ -602,7 +601,6 @@ def main():
         st.markdown("**Date**")
         selected_date = st.date_input("", value=pd.to_datetime("2026-02-12"), label_visibility="collapsed")
     
-    st.markdown("---")
     
     # Weekly Overview section title - appears above KPIs
     st.markdown('<div class="section-header">Weekly Overview</div>', unsafe_allow_html=True)
@@ -635,7 +633,6 @@ def main():
         </div>
         """, unsafe_allow_html=True)
     
-    st.markdown("---")
     
     # Department Gap Comparison - dynamic highlighting based on selected department
     st.markdown('<div class="section-header">Department Gap Comparison</div>', unsafe_allow_html=True)
@@ -665,29 +662,61 @@ def main():
                 color = "#d62728" if gap.startswith('-') else "#2ca02c" if gap != '0' else "#666"
                 st.markdown(f'<div style="padding: 0.5rem; background-color: {bg_color}; text-align: center; border: 1px solid #ddd; color: {color}; font-weight: bold;">{gap}</div>', unsafe_allow_html=True)
     
-    st.markdown("---")
     # Weekly Department Details section
     st.markdown("---")
     st.markdown('<div class="section-header">Weekly Department Details</div>', unsafe_allow_html=True)
     
-    # Four toggle buttons in the order from mockup
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        if st.button("📊 Shift Summary", use_container_width=True):
-            st.session_state.current_view = "Shift Summary"
-    
-    with col2:
-        if st.button("👥 Roster HC Summary", use_container_width=True):
-            st.session_state.current_view = "Roster HC Summary"
-    
-    with col3:
-        if st.button("📋 Roster HC Details", use_container_width=True):
-            st.session_state.current_view = "Roster HC Details"
-    
-    with col4:
-        if st.button("📈 Attendance Assumption", use_container_width=True):
-            st.session_state.current_view = "Attendance Assumption"
+
+# Four toggle buttons with dynamic highlighting - REPLACE lines 670-687
+col1, col2, col3, col4 = st.columns(4)
+
+# Button data for easier management
+buttons = [
+    {"view": "Shift Summary", "icon": "📊", "label": "Shift Summary"},
+    {"view": "Roster HC Summary", "icon": "👥", "label": "Roster HC Summary"}, 
+    {"view": "Roster HC Details", "icon": "📋", "label": "Roster HC Details"},
+    {"view": "Attendance Assumption", "icon": "📈", "label": "Attendance Assumption"}
+]
+
+columns = [col1, col2, col3, col4]
+
+for i, (col, btn) in enumerate(zip(columns, buttons)):
+    with col:
+        # Determine if this button is selected
+        is_selected = st.session_state.current_view == btn["view"]
+        
+        # Set colors based on selection
+        bg_color = "#2ca02c" if is_selected else "#1f77b4"  # Green if selected, blue if not
+        text_color = "white"
+        border_color = "#2ca02c" if is_selected else "#1f77b4"
+        
+        # Create custom styled button using HTML
+        button_html = f"""
+        <div style="
+            background-color: {bg_color};
+            color: {text_color};
+            padding: 0.75rem;
+            border: 2px solid {border_color};
+            border-radius: 0.5rem;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            margin: 0.25rem 0;
+            box-shadow: {'0 4px 8px rgba(0,0,0,0.2)' if is_selected else '0 2px 4px rgba(0,0,0,0.1)'};
+            transition: all 0.3s ease;
+        " onclick="this.style.transform='scale(0.98)'">
+            {btn["icon"]} {btn["label"]}
+        </div>
+        """
+        
+        # Display the styled button and handle clicks
+        st.markdown(button_html, unsafe_allow_html=True)
+        
+        # Use an invisible button for click detection
+        if st.button(f"Select {btn['label']}", key=f"btn_{i}", label_visibility="hidden"):
+            st.session_state.current_view = btn["view"]
+            st.rerun()  # Force refresh to show the highlighting immediately
     
     # Display selected view with exact tables and tooltips
     if st.session_state.current_view == "Shift Summary":
@@ -770,3 +799,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
