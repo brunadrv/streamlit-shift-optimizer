@@ -689,14 +689,14 @@ def main():
     
     # Display selected view with exact tables and tooltips
     if current_view == "Shift Summary":
-        st.markdown("### Shift Summary")
+        st.markdown("#### Shift Summary")
         st.markdown("*Hover over numbers to see detailed breakdowns and comparisons*")
         
         fig = create_transposed_shift_summary_table_with_tooltips()
         st.plotly_chart(fig, use_container_width=True)
     
     elif current_view == "Roster HC Summary":
-        st.markdown("### Roster HC Summary")
+        st.markdown("#### Roster HC Summary")
         st.markdown("Shows Filtered Dept vs Other Depts")
         
         # Simple summary for now - can be enhanced based on more mockup details
@@ -715,7 +715,7 @@ def main():
         st.plotly_chart(fig, use_container_width=True)
     
     elif current_view == "Roster HC Details":
-        st.markdown("### Roster HC Details")
+        st.markdown("#### Roster HC Details")
         st.markdown("**● Att.Assumption: 92%**")
         st.markdown("**● Vs Prev. Week: -6 workers**")
         
@@ -723,7 +723,7 @@ def main():
         st.plotly_chart(fig, use_container_width=True)
     
     else:  # Attendance Assumption
-        st.markdown("### Attendance Assumption")
+        st.markdown("#### Attendance Assumption")
         st.markdown(f'<div class="metric-change metric-change-up" style="font-size: 1.2rem;">+20 vs Previous Week</div>', unsafe_allow_html=True)
         
         # Show bullet points exactly as in mockup
@@ -748,7 +748,7 @@ def main():
         st.info(f"✅ {selected_department} staffing is balanced")
     
     # Employee details table with exact columns and tooltips
-    st.markdown(f"### {selected_department} Employee List")
+    st.markdown(f"#### {selected_department} Employee List")
     st.markdown("*Detailed employee roster with exact columns from mockup*")
     
     fig = create_employee_details_table_with_tooltips(selected_department)
@@ -768,6 +768,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
