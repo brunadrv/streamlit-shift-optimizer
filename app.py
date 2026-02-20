@@ -667,23 +667,40 @@ def main():
     st.markdown('<div class="section-header">Weekly Department Details</div>', unsafe_allow_html=True)
     
 
-# Four toggle buttons with dynamic highlighting - REPLACE lines 670-687
+# Four toggle buttons with dynamic highlighting - REPLACE lines 670-687  
 col1, col2, col3, col4 = st.columns(4)
 
-# Button data for easier management
-buttons = [
-    {"view": "Shift Summary", "icon": "📊", "label": "Shift Summary"},
-    {"view": "Roster HC Summary", "icon": "👥", "label": "Roster HC Summary"}, 
-    {"view": "Roster HC Details", "icon": "📋", "label": "Roster HC Details"},
-    {"view": "Attendance Assumption", "icon": "📈", "label": "Attendance Assumption"}
-]
+with col1:
+    # Check if this view is selected
+    is_selected = st.session_state.current_view == "Shift Summary"
+    button_type = "primary" if is_selected else "secondary"
+    
+    if st.button("📊 Shift Summary", use_container_width=True, type=button_type):
+        st.session_state.current_view = "Shift Summary"
 
-columns = [col1, col2, col3, col4]
+with col2:
+    # Check if this view is selected
+    is_selected = st.session_state.current_view == "Roster HC Summary"
+    button_type = "primary" if is_selected else "secondary"
+    
+    if st.button("👥 Roster HC Summary", use_container_width=True, type=button_type):
+        st.session_state.current_view = "Roster HC Summary"
 
-for i, (col, btn) in enumerate(zip(columns, buttons)):
-    with col:
-        # Determine if this button is selected
-        is_selected = st.session_state.current_view == btn["view"]
+with col3:
+    # Check if this view is selected
+    is_selected = st.session_state.current_view == "Roster HC Details"
+    button_type = "primary" if is_selected else "secondary"
+    
+    if st.button("📋 Roster HC Details", use_container_width=True, type=button_type):
+        st.session_state.current_view = "Roster HC Details"
+
+with col4:
+    # Check if this view is selected
+    is_selected = st.session_state.current_view == "Attendance Assumption"
+    button_type = "primary" if is_selected else "secondary"
+    
+    if st.button("📈 Attendance Assumption", use_container_width=True, type=button_type):
+        st.session_state.current_view = "Attendance Assumption"
         
         # Set colors based on selection
         bg_color = "#2ca02c" if is_selected else "#1f77b4"  # Green if selected, blue if not
@@ -799,4 +816,5 @@ for i, (col, btn) in enumerate(zip(columns, buttons)):
 if __name__ == "__main__":
 
     main()
+
 
