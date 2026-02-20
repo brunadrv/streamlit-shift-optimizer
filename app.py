@@ -666,6 +666,9 @@ def main():
                 st.markdown(f'<div style="padding: 0.5rem; background-color: {bg_color}; text-align: center; border: 1px solid #ddd; color: {color}; font-weight: bold;">{gap}</div>', unsafe_allow_html=True)
     
     st.markdown("---")
+    # Weekly Department Details section
+    st.markdown("---")
+    st.markdown('<div class="section-header">Weekly Department Details</div>', unsafe_allow_html=True)
     
     # Four toggle buttons in the order from mockup
     col1, col2, col3, col4 = st.columns(4)
@@ -736,9 +739,6 @@ def main():
             st.markdown("**● WW: 20**")
             st.markdown("**● FLEX: 0**")
     
-    # Weekly Department Details section
-    st.markdown("---")
-    st.markdown('<div class="section-header">Weekly Department Details</div>', unsafe_allow_html=True)
     
     # Show gap analysis for selected department
     gap = st.session_state.departments[selected_department]
@@ -751,7 +751,7 @@ def main():
     
     # Employee details table with exact columns and tooltips
     st.markdown(f"### {selected_department} Employee List")
-    st.markdown("*Detailed employee roster with exact columns from mockup*")
+    st.markdown("*Detailed employee roster*")
     
     fig = create_employee_details_table_with_tooltips(selected_department)
     if fig:
@@ -768,4 +768,5 @@ def main():
     st.markdown("**Labor Planning Shift Optimizer** | Data as of " + datetime.now().strftime("%Y-%m-%d %H:%M"))
 
 if __name__ == "__main__":
+
     main()
