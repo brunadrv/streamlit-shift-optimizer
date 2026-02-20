@@ -667,24 +667,40 @@ def main():
     
     st.markdown("---")
     
-    # Four toggle buttons in the order from mockup
-    col1, col2, col3, col4 = st.columns(4)
+# Four toggle buttons with dynamic highlighting - REPLACE lines 670-687  
+col1, col2, col3, col4 = st.columns(4)
+
+with col1:
+    # Check if this view is selected
+    is_selected = st.session_state.current_view == "Shift Summary"
+    button_type = "primary" if is_selected else "secondary"
     
-    with col1:
-        if st.button("📊 Shift Summary", use_container_width=True):
-            st.session_state.current_view = "Shift Summary"
+    if st.button("📊 Shift Summary", use_container_width=True, type=button_type):
+        st.session_state.current_view = "Shift Summary"
+
+with col2:
+    # Check if this view is selected
+    is_selected = st.session_state.current_view == "Roster HC Summary"
+    button_type = "primary" if is_selected else "secondary"
     
-    with col2:
-        if st.button("👥 Roster HC Summary", use_container_width=True):
-            st.session_state.current_view = "Roster HC Summary"
+    if st.button("👥 Roster HC Summary", use_container_width=True, type=button_type):
+        st.session_state.current_view = "Roster HC Summary"
+
+with col3:
+    # Check if this view is selected
+    is_selected = st.session_state.current_view == "Roster HC Details"
+    button_type = "primary" if is_selected else "secondary"
     
-    with col3:
-        if st.button("📋 Roster HC Details", use_container_width=True):
-            st.session_state.current_view = "Roster HC Details"
+    if st.button("📋 Roster HC Details", use_container_width=True, type=button_type):
+        st.session_state.current_view = "Roster HC Details"
+
+with col4:
+    # Check if this view is selected
+    is_selected = st.session_state.current_view == "Attendance Assumption"
+    button_type = "primary" if is_selected else "secondary"
     
-    with col4:
-        if st.button("📈 Attendance Assumption", use_container_width=True):
-            st.session_state.current_view = "Attendance Assumption"
+    if st.button("📈 Attendance Assumption", use_container_width=True, type=button_type):
+        st.session_state.current_view = "Attendance Assumption"
     
     # Display selected view with exact tables and tooltips
     if st.session_state.current_view == "Shift Summary":
@@ -768,4 +784,5 @@ def main():
     st.markdown("**Labor Planning Shift Optimizer** | Data as of " + datetime.now().strftime("%Y-%m-%d %H:%M"))
 
 if __name__ == "__main__":
+
     main()
