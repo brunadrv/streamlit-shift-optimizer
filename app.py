@@ -661,7 +661,6 @@ def main():
                 st.markdown(f'<div style="padding: 0.5rem; background-color: {bg_color}; text-align: center; border: 1px solid #ddd; color: {color}; font-weight: bold;">{gap}</div>', unsafe_allow_html=True)
 
     # Department Details section
-    st.markdown("---")
     st.markdown('<div class="section-header">Department Details</div>', unsafe_allow_html=True)
     
     # Four toggle buttons with built-in highlighting
@@ -768,5 +767,6 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
