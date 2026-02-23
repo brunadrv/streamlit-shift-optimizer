@@ -1155,7 +1155,7 @@ def main():
         st.plotly_chart(create_transposed_attendance_assumptions_table(), use_container_width=True)
     
     
-    # Show gap analysis for selected department
+    st.markdown('<div class="section-header">Roster Details</div>', unsafe_allow_html=True)
     gap = st.session_state.departments[selected_department]
     if gap < 0:
         st.error(f"⚠️ {selected_department} is understaffed by {abs(gap)} people")
@@ -1185,6 +1185,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
