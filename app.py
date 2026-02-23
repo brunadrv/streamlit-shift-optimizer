@@ -669,7 +669,7 @@ def create_transposed_shift_summary_table_with_tooltips():
     # Create the Plotly table
     fig = go.Figure(data=[go.Table(
         header=dict(
-            values=['Row Labels'] + columns,
+            values=['Date & Shift'] + columns,
             fill_color='#f1f1f1',
             align='center',
             font=dict(size=12, color='#2E4057'),
@@ -714,7 +714,7 @@ def create_transposed_hc_details_table_with_tooltips():
     # Create the Plotly table
     fig = go.Figure(data=[go.Table(
         header=dict(
-            values=['Row Labels'] + columns,
+            values=['Date & Shift'] + columns,
             fill_color='#f1f1f1',
             align='center',
             font=dict(size=12, color='#2E4057'),
@@ -781,7 +781,7 @@ def create_transposed_attendance_assumptions_table():
     # Create the Plotly table
     fig = go.Figure(data=[go.Table(
         header=dict(
-            values=[''] + columns,  # Empty first header for row labels column
+            values=['Date & Shift'] + columns,  # Empty first header for row labels column
             fill_color='#f1f1f1',
             align='center',
             font=dict(size=12, color='#2E4057'),
@@ -1104,6 +1104,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
