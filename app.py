@@ -1166,7 +1166,7 @@ def main():
     
     # Employee details table with exact columns and tooltips
     st.markdown(f"#### {selected_department} Employee List")
-    st.markdown("*Detailed employee roster with exact columns from mockup*")
+    st.markdown("*Detailed employee roster for filtered department*")
     
     fig = create_employee_details_table_with_tooltips(selected_department)
     if fig:
@@ -1185,6 +1185,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
