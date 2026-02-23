@@ -132,9 +132,6 @@ if 'data_initialized' not in st.session_state:
     # Shift Summary: Transposed structure with Date, Week Day, Shift, Total Needed, Total Expected, Total Gap, Total Attendance Assumption, Total Punches as ROWS
     st.session_state.shift_summary_transposed = {
         '2026-02-12 Thu Shift 1': {
-            'Date': '2026-02-12',
-            'Week Day': 'Thu',
-            'Shift': 'Shift 1',
             'Total Needed': 91,
             'Total Expected': 79,
             'Total Gap': -12,
@@ -147,9 +144,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_punches': 'Previous Week: 98\n• Change: +8'
         },
         '2026-02-12 Thu Shift 2': {
-            'Date': '2026-02-12',
-            'Week Day': 'Thu',
-            'Shift': 'Shift 2',
             'Total Needed': 86,
             'Total Expected': 73,
             'Total Gap': -13,
@@ -162,9 +156,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_punches': 'Previous Week: 85\n• Change: +3'
         },
         '2026-02-12 Thu Shift 3': {
-            'Date': '2026-02-12',
-            'Week Day': 'Thu',
-            'Shift': 'Shift 3',
             'Total Needed': 15,
             'Total Expected': 18,
             'Total Gap': 3,
@@ -177,9 +168,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_punches': 'Previous Week: 0\n• Change: 0'
         },
         '2026-02-13 Fri Shift 1': {
-            'Date': '2026-02-13',
-            'Week Day': 'Fri',
-            'Shift': 'Shift 1',
             'Total Needed': 79,
             'Total Expected': 83,
             'Total Gap': 4,
@@ -192,9 +180,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_punches': 'Previous Week: 88\n• Change: +3'
         },
         '2026-02-13 Fri Shift 2': {
-            'Date': '2026-02-13',
-            'Week Day': 'Fri',
-            'Shift': 'Shift 2',
             'Total Needed': 65,
             'Total Expected': 53,
             'Total Gap': -12,
@@ -207,9 +192,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_punches': 'Previous Week: 95\n• Change: +6'
         },
         '2026-02-13 Fri Shift 3': {
-            'Date': '2026-02-13',
-            'Week Day': 'Fri',
-            'Shift': 'Shift 3',
             'Total Needed': 13,
             'Total Expected': 17,
             'Total Gap': 4,
@@ -222,9 +204,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_punches': 'Previous Week: 0\n• Change: 0'
         },
         '2026-02-14 Sat Shift 1': {
-            'Date': '2026-02-14',
-            'Week Day': 'Sat',
-            'Shift': 'Shift 1',
             'Total Needed': 76,
             'Total Expected': 78,
             'Total Gap': 2,
@@ -237,9 +216,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_punches': 'Previous Week: 95\n• Change: +3'
         },
         '2026-02-14 Sat Shift 2': {
-            'Date': '2026-02-14',
-            'Week Day': 'Sat',
-            'Shift': 'Shift 2',
             'Total Needed': 55,
             'Total Expected': 79,
             'Total Gap': 24,
@@ -252,9 +228,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_punches': 'Previous Week: 70\n• Change: +3'
         },
         '2026-02-14 Sat Shift 3': {
-            'Date': '2026-02-14',
-            'Week Day': 'Sat',
-            'Shift': 'Shift 3',
             'Total Needed': 14,
             'Total Expected': 16,
             'Total Gap': 2,
@@ -271,9 +244,6 @@ if 'data_initialized' not in st.session_state:
     # Weekly Expected HC Details: Transposed structure with Date, Week Day, Shift, FTE, TEMP, NEW HIRES, FLEX, WW/GS, VEH/MEH, PTO as ROWS
     st.session_state.weekly_hc_details_transposed = {
         '2026-02-12 Thu Shift 1': {
-            'Date': '2026-02-12',
-            'Week Day': 'Thu',
-            'Shift': 'Shift 1',
             'FTE': 48,
             'TEMP': 30,
             'NEW HIRES': 0,
@@ -290,9 +260,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_pto': 'Previous Week: 2\n• Change: -1'
         },
         '2026-02-12 Thu Shift 2': {
-            'Date': '2026-02-12',
-            'Week Day': 'Thu',
-            'Shift': 'Shift 2',
             'FTE': 58,
             'TEMP': 15,
             'NEW HIRES': 0,
@@ -309,9 +276,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_pto': 'Previous Week: 0\n• Change: 0'
         },
         '2026-02-12 Thu Shift 3': {
-            'Date': '2026-02-12',
-            'Week Day': 'Thu',
-            'Shift': 'Shift 3',
             'FTE': 12,
             'TEMP': 7,
             'NEW HIRES': 0,
@@ -328,9 +292,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_pto': 'Previous Week: 0\n• Change: 0'
         },
         '2026-02-13 Fri Shift 1': {
-            'Date': '2026-02-13',
-            'Week Day': 'Fri',
-            'Shift': 'Shift 1',
             'FTE': 40,
             'TEMP': 21,
             'NEW HIRES': 0,
@@ -347,9 +308,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_pto': 'Previous Week: 0\n• Change: 0'
         },
         '2026-02-13 Fri Shift 2': {
-            'Date': '2026-02-13',
-            'Week Day': 'Fri',
-            'Shift': 'Shift 2',
             'FTE': 50,
             'TEMP': 3,
             'NEW HIRES': 0,
@@ -366,9 +324,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_pto': 'Previous Week: 0\n• Change: 0'
         },
         '2026-02-13 Fri Shift 3': {
-            'Date': '2026-02-13',
-            'Week Day': 'Fri',
-            'Shift': 'Shift 3',
             'FTE': 17,
             'TEMP': 0,
             'NEW HIRES': 0,
@@ -385,9 +340,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_pto': 'Previous Week: 0\n• Change: 0'
         },
         '2026-02-14 Sat Shift 1': {
-            'Date': '2026-02-14',
-            'Week Day': 'Sat',
-            'Shift': 'Shift 1',
             'FTE': 43,
             'TEMP': 35,
             'NEW HIRES': 0,
@@ -404,9 +356,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_pto': 'Previous Week: 0\n• Change: 0'
         },
         '2026-02-14 Sat Shift 2': {
-            'Date': '2026-02-14',
-            'Week Day': 'Sat',
-            'Shift': 'Shift 2',
             'FTE': 62,
             'TEMP': 17,
             'NEW HIRES': 0,
@@ -423,9 +372,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_pto': 'Previous Week: 0\n• Change: 0'
         },
         '2026-02-14 Sat Shift 3': {
-            'Date': '2026-02-14',
-            'Week Day': 'Sat',
-            'Shift': 'Shift 3',
             'FTE': 10,
             'TEMP': 6,
             'NEW HIRES': 0,
@@ -446,9 +392,6 @@ if 'data_initialized' not in st.session_state:
     # Attendance Assumption: Transposed structure with Date, Week Day, Shift, FTE Attendance Assumption, TEMP Attendance Assumption, NEW HIRES Show Up Rate, FLEX Show Up Rate, WW/GS Show Up Rate, VEH Show Up Rate as ROWS
     st.session_state.attendance_assumptions_transposed = {
         '2026-02-12 Thu Shift 1': {
-            'Date': '2026-02-12',
-            'Week Day': 'Thu',
-            'Shift': 'Shift 1',
             'FTE Attendance Assumption': '90%',
             'TEMP Attendance Assumption': '84%',
             'NEW HIRES Show Up Rate': '50%',
@@ -463,9 +406,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_veh': 'Previous Week: 80%\n• Change: 0%'
         },
         '2026-02-12 Thu Shift 2': {
-            'Date': '2026-02-12',
-            'Week Day': 'Thu',
-            'Shift': 'Shift 2',
             'FTE Attendance Assumption': '90%',
             'TEMP Attendance Assumption': '83%',
             'NEW HIRES Show Up Rate': '50%',
@@ -480,9 +420,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_veh': 'Previous Week: 80%\n• Change: 0%'
         },
         '2026-02-12 Thu Shift 3': {
-            'Date': '2026-02-12',
-            'Week Day': 'Thu',
-            'Shift': 'Shift 3',
             'FTE Attendance Assumption': '83%',
             'TEMP Attendance Assumption': '81%',
             'NEW HIRES Show Up Rate': '50%',
@@ -497,9 +434,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_veh': 'Previous Week: 80%\n• Change: 0%'
         },
         '2026-02-13 Fri Shift 1': {
-            'Date': '2026-02-13',
-            'Week Day': 'Fri',
-            'Shift': 'Shift 1',
             'FTE Attendance Assumption': '93%',
             'TEMP Attendance Assumption': '60%',
             'NEW HIRES Show Up Rate': '50%',
@@ -514,9 +448,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_veh': 'Previous Week: 80%\n• Change: 0%'
         },
         '2026-02-13 Fri Shift 2': {
-            'Date': '2026-02-13',
-            'Week Day': 'Fri',
-            'Shift': 'Shift 2',
             'FTE Attendance Assumption': '86%',
             'TEMP Attendance Assumption': '78%',
             'NEW HIRES Show Up Rate': '50%',
@@ -531,9 +462,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_veh': 'Previous Week: 80%\n• Change: 0%'
         },
         '2026-02-13 Fri Shift 3': {
-            'Date': '2026-02-13',
-            'Week Day': 'Fri',
-            'Shift': 'Shift 3',
             'FTE Attendance Assumption': '84%',
             'TEMP Attendance Assumption': '100%',
             'NEW HIRES Show Up Rate': '50%',
@@ -548,9 +476,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_veh': 'Previous Week: 80%\n• Change: 0%'
         },
         '2026-02-14 Sat Shift 1': {
-            'Date': '2026-02-14',
-            'Week Day': 'Sat',
-            'Shift': 'Shift 1',
             'FTE Attendance Assumption': '92%',
             'TEMP Attendance Assumption': '76%',
             'NEW HIRES Show Up Rate': '50%',
@@ -565,9 +490,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_veh': 'Previous Week: 80%\n• Change: 0%'
         },
         '2026-02-14 Sat Shift 2': {
-            'Date': '2026-02-14',
-            'Week Day': 'Sat',
-            'Shift': 'Shift 2',
             'FTE Attendance Assumption': '91%',
             'TEMP Attendance Assumption': '71%',
             'NEW HIRES Show Up Rate': '50%',
@@ -582,9 +504,6 @@ if 'data_initialized' not in st.session_state:
             'tooltip_veh': 'Previous Week: 80%\n• Change: 0%'
         },
         '2026-02-14 Sat Shift 3': {
-            'Date': '2026-02-14',
-            'Week Day': 'Sat',
-            'Shift': 'Shift 3',
             'FTE Attendance Assumption': '88%',
             'TEMP Attendance Assumption': '72%',
             'NEW HIRES Show Up Rate': '50%',
@@ -1185,6 +1104,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
