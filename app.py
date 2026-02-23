@@ -688,7 +688,7 @@ def create_transposed_shift_summary_table_with_tooltips():
     
     fig.update_layout(
         height=300,
-        margin=dict(l=0, r=0, t=10, b=-10),
+        margin=dict(l=0, r=0, t=20, b=0),
         title="Shift Summary - Hover over values to see details"
     )
     
@@ -1104,6 +1104,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
