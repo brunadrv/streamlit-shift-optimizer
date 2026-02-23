@@ -594,7 +594,7 @@ def create_transposed_shift_summary_table_with_tooltips():
     
     # Prepare the transposed structure
     columns = list(st.session_state.shift_summary_transposed.keys())
-    rows = ['Date', 'Week Day', 'Shift', 'Total Needed', 'Total Expected', 'Total Gap', 'Total Attendance Assumption', 'Total Punches']
+    rows = ['Total Needed', 'Total Expected', 'Total Gap', 'Total Attendance Assumption', 'Total Punches']
     
     # Create the data structure for Plotly table
     header_values = [''] + columns  # Empty first cell, then column headers
@@ -676,7 +676,7 @@ def create_transposed_shift_summary_table_with_tooltips():
             height=30
         ),
         cells=dict(
-            values=[['Date', 'Week Day', 'Shift', 'Total Needed', 'Total Expected', 'Total Gap', 'Total Attendance Assumption', 'Total Punches']] + 
+            values=[['Total Needed', 'Total Expected', 'Total Gap', 'Total Attendance Assumption', 'Total Punches']] + 
                    [[st.session_state.shift_summary_transposed[col][row] for row in rows] for col in columns],
             fill_color=[['#f9f9f9'] * len(rows)] + 
                       [[get_cell_color(col, row, st.session_state.shift_summary_transposed[col][row]) for row in rows] for col in columns],
@@ -709,7 +709,7 @@ def create_transposed_hc_details_table_with_tooltips():
     
     # Prepare the transposed structure
     columns = list(st.session_state.weekly_hc_details_transposed.keys())
-    rows = ['Date', 'Week Day', 'Shift', 'FTE', 'TEMP', 'NEW HIRES', 'FLEX', 'WW/GS', 'VEH/MEH', 'PTO']
+    rows = ['FTE', 'TEMP', 'NEW HIRES', 'FLEX', 'WW/GS', 'VEH/MEH', 'PTO']
     
     # Create the Plotly table
     fig = go.Figure(data=[go.Table(
@@ -721,7 +721,7 @@ def create_transposed_hc_details_table_with_tooltips():
             height=30
         ),
         cells=dict(
-            values=[['Date', 'Week Day', 'Shift', 'FTE', 'TEMP', 'NEW HIRES', 'FLEX', 'WW/GS', 'VEH/MEH', 'PTO']] + 
+            values=[['FTE', 'TEMP', 'NEW HIRES', 'FLEX', 'WW/GS', 'VEH/MEH', 'PTO']] + 
                    [[st.session_state.weekly_hc_details_transposed[col][row] for row in rows] for col in columns],
             fill_color=[['#f9f9f9'] * len(rows)] + 
                       [[get_hc_cell_color(col, row, st.session_state.weekly_hc_details_transposed[col][row]) for row in rows] for col in columns],
@@ -744,7 +744,7 @@ def create_transposed_attendance_assumptions_table():
     
     # Prepare the transposed structure
     columns = list(st.session_state.attendance_assumptions_transposed.keys())
-    rows = ['Date', 'Week Day', 'Shift', 'FTE Attendance Assumption', 'TEMP Attendance Assumption', 'NEW HIRES Show Up Rate', 'FLEX Show Up Rate', 'WW/GS Show Up Rate', 'VEH Show Up Rate']
+    rows = ['FTE Attendance Assumption', 'TEMP Attendance Assumption', 'NEW HIRES Show Up Rate', 'FLEX Show Up Rate', 'WW/GS Show Up Rate', 'VEH Show Up Rate']
     
     def get_tooltip_for_cell(col, row):
         """Get tooltip for each cell based on column and row"""
@@ -1031,7 +1031,7 @@ def main():
     # Department Details section
     st.markdown('<div class="section-header">Department Details</div>', unsafe_allow_html=True)
     
-    # Three toggle buttons with built-in highlighting (removed Roster HC Details)
+    # Three toggle buttons with built-in highlighting
     view_options = ["📊 Shift Summary", "👥 Roster HC Summary", "📈 Attendance Assumption"]
     
     # Use radio directly and let it manage the state
@@ -1043,7 +1043,7 @@ def main():
         key="view_selector"
     )
     
-    # Map radio selection to view names for the display logic (removed Roster HC Details)
+    # Map radio selection to view names for the display logic
     view_mapping = {
         "📊 Shift Summary": "Shift Summary",
         "👥 Roster HC Summary": "Roster HC Summary", 
@@ -1104,6 +1104,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
