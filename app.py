@@ -762,7 +762,7 @@ def create_transposed_shift_summary_table_with_tooltips():
             fill_color=[['#f9f9f9'] * len(rows)] + 
                       [[get_cell_color(col, row, st.session_state.shift_summary_transposed[col][row]) for row in rows] for col in columns],
             align='center',
-            font=dict(size=10),
+            font=dict(size=12),
             height=25,
         )
     )])
@@ -798,7 +798,7 @@ def create_transposed_hc_details_table_with_tooltips():
             values=['Row Labels'] + columns,
             fill_color='#f1f1f1',
             align='center',
-            font=dict(size=10, color='#2E4057'),
+            font=dict(size=12, color='#2E4057'),
             height=30
         ),
         cells=dict(
@@ -807,7 +807,7 @@ def create_transposed_hc_details_table_with_tooltips():
             fill_color=[['#f9f9f9'] * len(rows)] + 
                       [[get_hc_cell_color(col, row, st.session_state.weekly_hc_details_transposed[col][row]) for row in rows] for col in columns],
             align='center',
-            font=dict(size=9),
+            font=dict(size=12),
             height=25,
         )
     )])
@@ -865,14 +865,14 @@ def create_transposed_attendance_assumptions_table():
             values=[''] + columns,  # Empty first header for row labels column
             fill_color='#f1f1f1',
             align='center',
-            font=dict(size=10, color='#2E4057'),
+            font=dict(size=12, color='#2E4057'),
             height=30
         ),
         cells=dict(
             values=cell_values,
             fill_color=cell_colors,
             align='center',
-            font=dict(size=9),
+            font=dict(size=12),
             height=25,
         )
     )])
@@ -1185,6 +1185,7 @@ def main():
 if __name__ == "__main__":
 
     main()
+
 
 
 
