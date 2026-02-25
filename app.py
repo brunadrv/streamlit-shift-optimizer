@@ -990,7 +990,7 @@ def get_gap_status_info(gap, gap_percentage):
     if gap == 0:
         return "✅ Fully Staffed", "gap-neutral", "#28a745"
     elif gap > 0:
-        return f"📉 Understaffed by {abs(gap_percentage)}%", "gap-negative", "#dc3545"
+        return f"↘️ Understaffed by {abs(gap_percentage)}%", "gap-negative", "#dc3545"
     else:
         return f"📊 Overstaffed by {abs(gap_percentage)}%", "gap-positive", "#28a745"
 
@@ -1939,7 +1939,7 @@ def main():
         st.markdown(f'<div class="{gap_class}">{abs(metrics["gap"])}</div>', unsafe_allow_html=True)
         # Dynamic change indicator - similar to other metrics
         gap_change = metrics.get("gap_change", 3)  # Default to 3% if not available
-        change_symbol = "📈" if gap_change >= 0 else "📉"
+        change_symbol = "↗️" if gap_change >= 0 else "↘️"
         change_class = "metric-change-up" if gap_change >= 0 else "metric-change-down"
         st.markdown(f'<div class="metric-change {change_class}">{change_symbol} {abs(gap_change)}% vs last week</div>', unsafe_allow_html=True)
     
@@ -1950,7 +1950,7 @@ def main():
         
         # Dynamic change indicator
         punches_change = metrics.get("punches_change", 4)  # Default to 4% if not available
-        change_symbol = "📈" if punches_change >= 0 else "📉"
+        change_symbol = "↗️" if punches_change >= 0 else "↘️"
         change_class = "metric-change-up" if punches_change >= 0 else "metric-change-down"
         st.markdown(f'<div class="metric-change {change_class}">{change_symbol} {abs(punches_change)}% vs last week</div>', unsafe_allow_html=True)
 
@@ -1961,7 +1961,7 @@ def main():
     st.markdown('<div class="section-header">Department Details</div>', unsafe_allow_html=True)
     
     # Three toggle buttons with built-in highlighting
-    view_options = ["📊 Shift Summary", "👥 Roster HC Summary", "📈 Attendance Assumption"]
+    view_options = ["📊 Shift Summary", "👥 Roster HC Summary", "↗️ Attendance Assumption"]
     
     # Use radio directly and let it manage the state
     selected_option = st.radio(
@@ -1976,7 +1976,7 @@ def main():
     view_mapping = {
         "📊 Shift Summary": "Shift Summary",
         "👥 Roster HC Summary": "Roster HC Summary", 
-        "📈 Attendance Assumption": "Attendance Assumption"
+        "↗️ Attendance Assumption": "Attendance Assumption"
     }
     
     # Get the current view from radio selection
@@ -2036,6 +2036,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
