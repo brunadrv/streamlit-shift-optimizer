@@ -139,117 +139,7 @@ if 'data_initialized' not in st.session_state:
     }
 
     
-    # Shift Summary: Transposed structure with Date, Week Day, Shift, Total Needed, Total Expected, Total Gap, Total Attendance Assumption, Total Punches as ROWS
-    st.session_state.shift_summary_transposed = {
-        '2026-02-12 Thu Shift 1': {
-            'Total Needed': 91,
-            'Total Expected': 79,
-            'Total Gap': -12,
-            'Total Attendance Assumption': '89%',
-            'Total Punches': 106,
-            'tooltip_needed': '• FTE: 35\n• TEMP: 35\n• WW: 20\n• FLEX: 0',
-            'tooltip_expected': '+3% vs prev week',
-            'tooltip_gap': '+3% vs prev week',
-            'tooltip_attendance': '+3% vs prev week',
-            'tooltip_punches': '+3% vs prev week'
-        },
-        '2026-02-12 Thu Shift 2': {
-            'Total Needed': 86,
-            'Total Expected': 73,
-            'Total Gap': -13,
-            'Total Attendance Assumption': '88%',
-            'Total Punches': 88,
-            'tooltip_needed': '• FTE: 28\n• TEMP: 30\n• WW: 15\n• FLEX: 13',
-            'tooltip_expected': '+3% vs prev week',
-            'tooltip_gap': '+3% vs prev week',
-            'tooltip_attendance': '+3% vs prev week',
-            'tooltip_punches': '+3% vs prev week'
-        },
-        '2026-02-12 Thu Shift 3': {
-            'Total Needed': 15,
-            'Total Expected': 18,
-            'Total Gap': 3,
-            'Total Attendance Assumption': '0%',
-            'Total Punches': 0,
-            'tooltip_needed': '• FTE: 8\n• TEMP: 4\n• WW: 3\n• FLEX: 0',
-            'tooltip_expected': '+3% vs prev week',
-            'tooltip_gap': '+3% vs prev week',
-            'tooltip_attendance': '+3% vs prev week',
-            'tooltip_punches': '+3% vs prev week'
-        },
-        '2026-02-13 Fri Shift 1': {
-            'Total Needed': 79,
-            'Total Expected': 83,
-            'Total Gap': 4,
-            'Total Attendance Assumption': '78%',
-            'Total Punches': 91,
-            'tooltip_needed': '• FTE: 40\n• TEMP: 25\n• WW: 12\n• FLEX: 2',
-            'tooltip_expected': '+3% vs prev week',
-            'tooltip_gap': '+3% vs prev week',
-            'tooltip_attendance': '+3% vs prev week',
-            'tooltip_punches': '+3% vs prev week'
-        },
-        '2026-02-13 Fri Shift 2': {
-            'Total Needed': 65,
-            'Total Expected': 53,
-            'Total Gap': -12,
-            'Total Attendance Assumption': '85%',
-            'Total Punches': 101,
-            'tooltip_needed': '• FTE: 30\n• TEMP: 20\n• WW: 10\n• FLEX: 5',
-            'tooltip_expected': '+3% vs prev week',
-            'tooltip_gap': '+3% vs prev week',
-            'tooltip_attendance': '+3% vs prev week',
-            'tooltip_punches': '+3% vs prev week'
-        },
-        '2026-02-13 Fri Shift 3': {
-            'Total Needed': 13,
-            'Total Expected': 17,
-            'Total Gap': 4,
-            'Total Attendance Assumption': '0%',
-            'Total Punches': 0,
-            'tooltip_needed': '• FTE: 10\n• TEMP: 3\n• WW: 0\n• FLEX: 0',
-            'tooltip_expected': '+3% vs prev week',
-            'tooltip_gap': '+3% vs prev week',
-            'tooltip_attendance': '+3% vs prev week',
-            'tooltip_punches': '+3% vs prev week'
-        },
-        '2026-02-14 Sat Shift 1': {
-            'Total Needed': 76,
-            'Total Expected': 78,
-            'Total Gap': 2,
-            'Total Attendance Assumption': '76%',
-            'Total Punches': 98,
-            'tooltip_needed': '• FTE: 45\n• TEMP: 18\n• WW: 8\n• FLEX: 5',
-            'tooltip_expected': '+3% vs prev week',
-            'tooltip_gap': '+3% vs prev week',
-            'tooltip_attendance': '+3% vs prev week',
-            'tooltip_punches': '+3% vs prev week'
-        },
-        '2026-02-14 Sat Shift 2': {
-            'Total Needed': 55,
-            'Total Expected': 79,
-            'Total Gap': 24,
-            'Total Attendance Assumption': '77%',
-            'Total Punches': 73,
-            'tooltip_needed': '• FTE: 35\n• TEMP: 15\n• WW: 5\n• FLEX: 0',
-            'tooltip_expected': '+3% vs prev week',
-            'tooltip_gap': '+3% vs prev week',
-            'tooltip_attendance': '+3% vs prev week',
-            'tooltip_punches': '+3% vs prev week'
-        },
-        '2026-02-14 Sat Shift 3': {
-            'Total Needed': 14,
-            'Total Expected': 16,
-            'Total Gap': 2,
-            'Total Attendance Assumption': '0%',
-            'Total Punches': 0,
-            'tooltip_needed': '• FTE: 12\n• TEMP: 2\n• WW: 0\n• FLEX: 0',
-            'tooltip_expected': '+3% vs prev week',
-            'tooltip_gap': '+3% vs prev week',
-            'tooltip_attendance': '+3% vs prev week',
-            'tooltip_punches': '+3% vs prev week'
-        }
-    }
+    
     
     # Weekly Expected HC Details: Transposed structure with Date, Week Day, Shift, FTE, TEMP, NEW HIRES, FLEX, WW/GS, VEH/MEH, PTO as ROWS
     st.session_state.weekly_hc_details_transposed = {
@@ -2327,6 +2217,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
