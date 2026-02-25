@@ -1937,7 +1937,7 @@ def create_combined_hc_attendance_table(filtered_hc_data, filtered_attendance_da
     # html_content += f"<div class='header-info'>Expected Headcount ({expected_hc_total})</div>"
     # Legend
     html_content += "<div class='legend'>"
-    html_content += "<strong>Legend (TBD with stakeholders)</strong><br>"
+    html_content += "<strong>Legend</strong><br>"
     html_content += "<span class='legend-item'><span class='legend-color variance-high'></span>>20% variance from last week</span>"
     html_content += "<span class='legend-item'><span class='legend-color variance-medium'></span>10-20% variance from last week</span>"
     html_content += "</div>"
@@ -2222,6 +2222,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
