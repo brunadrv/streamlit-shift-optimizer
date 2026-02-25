@@ -2192,7 +2192,7 @@ def main():
     # Create combined HC and Attendance Assumption table
     st.markdown("*Hover over cells to see detailed breakdowns and comparisons*")
     html_table = create_combined_hc_attendance_table(filtered_hc_data, filtered_attendance_data, metrics["expected"])
-    st.components.v1.html(html_table, height=600)
+    st.components.v1.html(html_table, height=400)
     
     st.markdown(f'<div class="section-header">{selected_department} Employee List</div>', unsafe_allow_html=True)
     # Remove gap banner - redundant
@@ -2222,6 +2222,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
