@@ -1121,52 +1121,6 @@ def create_attendance_html_table_with_tooltips(filtered_attendance_data):
             else:
                 tooltip_content = f"{value}"
 
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            
             html_content += f"""<td class='data-cell'>
                 {value}
                 <span class='tooltip-text'>{tooltip_content}</span>
@@ -1312,36 +1266,11 @@ def create_roster_hc_html_table_with_tooltips(filtered_hc_data):
                 tooltip_content = tooltip.replace('\n', '<br>')
             else:
                 tooltip_content = f"{value}"
-            
-
-
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
                 fte_val = data.get('FTE', 0)
                 temp_val = data.get('TEMP', 0) 
                 nh_val = data.get('NEW HIRES', 0)
                 flex_val = data.get('FLEX', 0)
 
-
-
-            
             html_content += f"""<td class='data-cell'>
                 {value}
                 <span class='tooltip-text'>{tooltip_content}</span>
@@ -1713,7 +1642,6 @@ def generate_dynamic_table_data(location, department, week, selected_dates, shif
     week_mult = week_variations.get(week, 1.0)
     week_mult = week_variations.get(week, 1.0)
     
-    # Shift multipliers - different staffing levels per shift
     # Shift multipliers - different staffing levels per shift
     shift_multipliers = {
         "1st": 1.2,   # Morning shift - typically needs more staff
@@ -2378,23 +2306,11 @@ def main():
     # Department Details section
     st.markdown(f'<div class="section-header">{selected_department} Expected HC ({metrics["expected"]})</div>', unsafe_allow_html=True)
     
-    # Create combined HC and Attendance Assumption table
     st.markdown("*Hover over cells to see detailed breakdowns and comparisons*")
     html_table = create_combined_hc_attendance_table(filtered_hc_data, filtered_attendance_data, metrics["expected"])
     st.components.v1.html(html_table, height=600)
     
     st.markdown(f'<div class="section-header">{selected_department} Employee List</div>', unsafe_allow_html=True)
-    # Remove gap banner - redundant
-    # gap = st.session_state.departments[selected_department]
-    # if gap < 0:
-    #     st.error(f"âš ï¸ {selected_department} is understaffed by {abs(gap)} people")
-    # elif gap > 0:
-    #     st.success(f"âœ… {selected_department} has {gap} extra people")
-    # else:
-    #     st.info(f"âœ… {selected_department} staffing is balanced")
-
-    # Employee details table
-    # Remove redundant subtitle
     fig = create_employee_details_table_with_tooltips(selected_department, filtered_employees)
     if fig:
         st.plotly_chart(fig, use_container_width=True)
@@ -2411,26 +2327,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
