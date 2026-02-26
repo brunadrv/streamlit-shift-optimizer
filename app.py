@@ -768,52 +768,6 @@ def create_attendance_html_table_with_tooltips(filtered_attendance_data):
                 tooltip_content = tooltip.replace('\\n', '<br>')
             else:
                 tooltip_content = f"{value}"
-
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
             
             html_content += f"""<td class='data-cell'>
                 {value}
@@ -2209,6 +2163,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
