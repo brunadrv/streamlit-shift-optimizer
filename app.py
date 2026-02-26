@@ -1356,7 +1356,7 @@ def generate_dynamic_table_data(location, department, week, selected_dates, shif
         'VEH Show Up Rate': '80.00%',
         'PTO Rate': '50%',
         'tooltip_fte': '+3% vs prev week',
-        'tooltip_temp': '+3% vs prev week'
+        'tooltip_temp': '+28% vs prev week'
     }
     
     # Generate dynamic data for each selected date and shift
@@ -1609,7 +1609,20 @@ def create_combined_hc_attendance_table(filtered_hc_data, filtered_attendance_da
                         variance_class = 'variance-high'
                     elif variance_pct >= 10:
                         variance_class = 'variance-medium'
-           
+
+             # Determine variance class by parsing the tooltip
+                variance_class = ''
+                if tooltip_attendance and 'vs prev week' in tooltip_attendance:
+                    # Extract percentage from tooltip (e.g., "+15% vs prev week" -> 15)
+                    import re
+                    match = re.search(r'([+-]?\d+)%', tooltip_attendance)
+                    if match:
+                        variance_pct = abs(int(match.group(1)))  # Get absolute value
+                        if variance_pct > 20:
+                            variance_class = 'variance-high'
+                        elif variance_pct >= 10:
+                            variance_class = 'variance-medium'
+                        
             # Headcount cell
             html_content += f"<td class='{variance_class}'>{hc_value}<span class='tooltip-text'>{tooltip_hc}</span></td>"
             
@@ -2163,6 +2176,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
