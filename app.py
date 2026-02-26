@@ -298,7 +298,7 @@ if 'data_initialized' not in st.session_state:
             'WW/GS': 0,
             'VEH/MEH': 2,
             'PTO': 1,
-            'tooltip_fte': '+3% vs prev week',
+            'tooltip_fte': '+15% vs prev week',
             'tooltip_temp': '+3% vs prev week',
             'tooltip_newhires': '+3% vs prev week',
             'tooltip_flex': '+3% vs prev week',
@@ -315,7 +315,7 @@ if 'data_initialized' not in st.session_state:
             'VEH/MEH': '',
             'PTO': '',
             'tooltip_fte': '+3% vs prev week',
-            'tooltip_temp': '+3% vs prev week',
+            'tooltip_temp': '+28% vs prev week',
             'tooltip_newhires': '+3% vs prev week',
             'tooltip_flex': '+3% vs prev week',
             'tooltip_wwgs': '+3% vs prev week',
@@ -2598,6 +2598,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
