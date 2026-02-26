@@ -1355,7 +1355,7 @@ def generate_dynamic_table_data(location, department, week, selected_dates, shif
         'WW/GS Show Up Rate': '100.00%',
         'VEH Show Up Rate': '80.00%',
         'PTO Rate': '50%',
-        'tooltip_fte': '+15% vs prev week',
+        'tooltip_fte': '+3% vs prev week',
         'tooltip_temp': '+3% vs prev week'
     }
     
@@ -2163,6 +2163,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
