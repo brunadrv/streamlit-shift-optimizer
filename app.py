@@ -1329,7 +1329,7 @@ def generate_dynamic_table_data(location, department, week, selected_dates, shif
         'Total Attendance Assumption': '89%',
         'Total Punches': 106,
         'tooltip_needed': 'â€¢ FTE: 35\nâ€¢ TEMP: 35\nâ€¢ WW: 20\nâ€¢ FLEX: 0',
-        'tooltip_expected': '+15% vs prev week',
+        'tooltip_expected': '+3% vs prev week',
         'tooltip_gap': '+3% vs prev week',
         'tooltip_attendance': '+3% vs prev week',
         'tooltip_punches': '+3% vs prev week'
@@ -1355,7 +1355,7 @@ def generate_dynamic_table_data(location, department, week, selected_dates, shif
         'WW/GS Show Up Rate': '100.00%',
         'VEH Show Up Rate': '80.00%',
         'PTO Rate': '50%',
-        'tooltip_fte': '+3% vs prev week',
+        'tooltip_fte': '+15% vs prev week',
         'tooltip_temp': '+3% vs prev week'
     }
     
@@ -2163,5 +2163,6 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
