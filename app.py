@@ -2041,9 +2041,9 @@ def create_combined_hc_attendance_table(filtered_hc_data, filtered_attendance_da
                 if match:
                     variance_pct = abs(int(match.group(1)))  # Get absolute value
                     if variance_pct > 20:
-                    variance_class = 'variance-high'
+                        variance_class = 'variance-high'
                     elif variance_pct >= 10:
-                    variance_class = 'variance-medium'
+                        variance_class = 'variance-medium'
            
             # Headcount cell
             html_content += f"<td class='{variance_class}'>{hc_value}<span class='tooltip-text'>{tooltip_hc}</span></td>"
@@ -2131,16 +2131,6 @@ def validate_and_adjust_hc_totals(filtered_hc_data, filtered_attendance_data, ov
                 adjusted_hc_data[shift_key][data_key] = int(round(hc_data[data_key] * ratio))
     
     return adjusted_hc_data
-
-
-
-
-
-
-
-
-
-
 
 def validate_and_adjust_totals(filtered_shift_data, overview_metrics, shifts):
     """Ensure table totals match overview metrics"""
@@ -2608,6 +2598,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
