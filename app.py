@@ -2032,9 +2032,19 @@ def create_combined_hc_attendance_table(filtered_hc_data, filtered_attendance_da
             # Get tooltip for attendance
             tooltip_attendance = attendance_data.get(f'tooltip_{data_key.lower()}', '+3% vs prev week')
             
-
-            # Determine variance class (TBD - will be calculated from actual variance data)
+           # Determine variance class by parsing the tooltip
             variance_class = ''
+            if tooltip_hc and 'vs prev week' in tooltip_hc:
+                # Extract percentage from tooltip (e.g., "+15% vs prev week" -> 15)
+                import re
+                match = re.search(r'([+-]?\d+)%', tooltip_hc)
+                if match:
+                    variance_pct = abs(int(match.group(1)))  # Get absolute value
+                    if variance_pct > 20:
+                    variance_class = 'variance-high'
+                    elif variance_pct >= 10:
+                    variance_class = 'variance-medium'
+           
             # Headcount cell
             html_content += f"<td class='{variance_class}'>{hc_value}<span class='tooltip-text'>{tooltip_hc}</span></td>"
             
@@ -2598,6 +2608,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
