@@ -241,15 +241,6 @@ if 'data_initialized' not in st.session_state:
         {'Date': '2026-02-12', 'Day of Week': 'Thursday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP050', 'Employee Name': 'Deborah Rogers', 'Hire Date': '2023-01-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
         {'Date': '2026-02-12', 'Day of Week': 'Thursday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP051', 'Employee Name': 'Stephen Reed', 'Hire Date': '2023-01-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
         {'Date': '2026-02-12', 'Day of Week': 'Thursday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP052', 'Employee Name': 'Stephanie Cook', 'Hire Date': '2023-01-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
-        {'Date': '2026-02-12', 'Day of Week': 'Thursday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP053', 'Employee Name': 'Eric Morgan', 'Hire Date': '2023-01-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
-        {'Date': '2026-02-12', 'Day of Week': 'Thursday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP054', 'Employee Name': 'Rebecca Bell', 'Hire Date': '2023-01-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
-        {'Date': '2026-02-12', 'Day of Week': 'Thursday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP055', 'Employee Name': 'Jacob Murphy', 'Hire Date': '2023-01-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
-        {'Date': '2026-02-12', 'Day of Week': 'Thursday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP056', 'Employee Name': 'Sharon Bailey', 'Hire Date': '2023-01-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
-        {'Date': '2026-02-12', 'Day of Week': 'Thursday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP057', 'Employee Name': 'Larry Rivera', 'Hire Date': '2023-01-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
-        {'Date': '2026-02-12', 'Day of Week': 'Thursday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP058', 'Employee Name': 'Cynthia Cooper', 'Hire Date': '2023-01-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
-        {'Date': '2026-02-12', 'Day of Week': 'Thursday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP059', 'Employee Name': 'Scott Richardson', 'Hire Date': '2023-01-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
-        {'Date': '2026-02-12', 'Day of Week': 'Thursday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP060', 'Employee Name': 'Kathleen Cox', 'Hire Date': '2023-01-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
-
         
         # Production Department
         {'Date': '2026-02-12', 'Day of Week': 'Thursday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'PRD001', 'Employee Name': 'James Wilson', 'Hire Date': '2023-03-22', 'Workday Schedule': '06:00-14:00', 'Department': 'Production', 'Manager': 'Michael Thompson', 'Roster Bucket': 'Active'},
@@ -2225,6 +2216,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
