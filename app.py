@@ -1343,7 +1343,7 @@ def generate_dynamic_table_data(location, department, week, selected_dates, shif
         'WW/GS': 0,
         'VEH/MEH': 2,
         'PTO': 1,
-        'tooltip_fte': '+3% vs prev week',
+        'tooltip_fte': '+15 vs prev week',
         'tooltip_temp': '+3% vs prev week'
     }
     
@@ -2163,6 +2163,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
