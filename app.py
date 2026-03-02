@@ -2186,7 +2186,7 @@ def main():
         )
     
     with hedge_col3:
-        st.markdown("**Hedge Rate (+/-)**")
+        st.markdown("**Hedge Attendance Rate (+/-)**")
         hedge_rate_input = st.number_input(
             "Hedge Attendance Rate",
             min_value=-100.0,
@@ -2302,6 +2302,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
