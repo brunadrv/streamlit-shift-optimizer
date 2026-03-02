@@ -283,7 +283,7 @@ def create_plotly_table_with_tooltips(df, hover_data=None):
     )])
     
     fig.update_layout(
-        height=400,
+        height=480,
         margin=dict(l=0, r=0, t=20, b=0)
     )
     
@@ -2157,7 +2157,7 @@ def main():
     # Create combined HC and Attendance Assumption table
     st.markdown("*Hover over cells to see detailed breakdowns and comparisons*")
     html_table = create_combined_hc_attendance_table(filtered_hc_data, filtered_attendance_data, metrics["expected"])
-    st.components.v1.html(html_table, height=400)
+    st.components.v1.html(html_table, height=480)
     
     # Hedge Attendance Rate Input Section
     st.markdown("---")
@@ -2302,6 +2302,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
