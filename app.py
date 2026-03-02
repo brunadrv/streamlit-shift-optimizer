@@ -2065,7 +2065,7 @@ def main():
         
         
         # Adjust HC data to match overview Expected HC total
-        filtered_hc_data = validate_and_adjust_hc_totals(filtered_hc_data, filtered_attendance_data, metrics['expected'], employee_types, data_key_mapping, attendance_key_mapping)
+        #filtered_hc_data = validate_and_adjust_hc_totals(filtered_hc_data, filtered_attendance_data, metrics['expected'], employee_types, data_key_mapping, attendance_key_mapping)
         
         # Filter employees - updated to use new structure
         filtered_employees = filter_employee_data_by_selections(st.session_state.employee_data, selected_department, selected_dates, shifts)
@@ -2302,6 +2302,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
