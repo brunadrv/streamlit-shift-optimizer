@@ -2158,72 +2158,8 @@ def main():
     st.markdown("*Hover over cells to see detailed breakdowns and comparisons*")
     html_table = create_combined_hc_attendance_table(filtered_hc_data, filtered_attendance_data, metrics["expected"])
     st.components.v1.html(html_table, height=480)
-    
-    # Hedge Attendance Rate Input Section
-    st.markdown("---")
-    st.markdown("### Adjust Hedge Attendance Rate (+/-)")
-    st.markdown("*Use this section to add or subtract from the attendance rate for specific dates and shifts.*")
-    
-    hedge_col1, hedge_col2, hedge_col3, hedge_col4 = st.columns([2, 1, 1.5, 1])
-    
-    with hedge_col1:
-        st.markdown("**Date**")
-        hedge_date = st.selectbox(
-            "Select Date for Hedge",
-            selected_dates,
-            format_func=lambda x: x.strftime("%Y-%m-%d"),
-            label_visibility="collapsed",
-            key="hedge_date_select"
-        )
-    
-    with hedge_col2:
-        st.markdown("**Shift**")
-        hedge_shift = st.selectbox(
-            "Select Shift for Hedge",
-            ["1st", "2nd", "3rd"],
-            label_visibility="collapsed",
-            key="hedge_shift_select"
-        )
-    
-    with hedge_col3:
-        st.markdown("**Hedge Attendance Rate (+/-)**")
-        hedge_rate_input = st.number_input(
-            "Hedge Attendance Rate",
-            min_value=-100.0,
-            max_value=100.0,
-            value=0.0,
-            step=0.5,
-            format="%.1f",
-            help="Enter a positive value to add to attendance rate or negative to subtract (e.g., -5.0 for -5%)",
-            label_visibility="collapsed",
-            key="hedge_rate_input"
-        )
-    
-    with hedge_col4:
-        st.markdown("**Action**")
-        if st.button("Submit Hedge", key="submit_hedge_button", type="primary"):
-            if hedge_date:
-                # Create hedge key
-                hedge_key = f"{hedge_date.strftime('%Y-%m-%d')}_{hedge_shift}"
-                # Store in session state
-                st.session_state.hedge_rates[hedge_key] = hedge_rate_input
-                st.success(f"Hedge rate of {hedge_rate_input:+.1f}% applied to {hedge_date.strftime('%Y-%m-%d')} {hedge_shift} shift!")
-                st.rerun()
-    
-    # Display current hedge rates
-    if st.session_state.hedge_rates:
-        st.markdown("**Current Hedge Rates:**")
-        hedge_display = []
-        for key, rate in st.session_state.hedge_rates.items():
-            date_part, shift_part = key.rsplit('_', 1)
-            hedge_display.append(f"• {date_part} {shift_part}: {rate:+.1f}%")
-        st.markdown("<br>".join(hedge_display), unsafe_allow_html=True)
-        
-        if st.button("Clear All Hedges", key="clear_hedges_button"):
-            st.session_state.hedge_rates = {}
-            st.success("All hedge rates cleared!")
-            st.rerun()
-    
+  
+  
     st.markdown(f'<div class="section-header">{selected_department} Employee List</div>', unsafe_allow_html=True)
     
     # Employee List Filters
@@ -2302,6 +2238,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
