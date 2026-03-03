@@ -2210,7 +2210,7 @@ def main():
     st.markdown("""
         <style>
         div[data-testid="stExpander"] {
-            margin-top: -20px !important;
+            margin-top: -40px !important;
         }
         </style>
     """, unsafe_allow_html=True)
@@ -2366,6 +2366,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
