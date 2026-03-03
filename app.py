@@ -1642,7 +1642,7 @@ def create_combined_hc_attendance_table(filtered_hc_data, filtered_attendance_da
         hedge_rate = st.session_state.hedge_rates.get(hedge_key, 0)
         hedge_display = f"{hedge_rate:+.0f}%" if hedge_rate != 0 else "-"
         
-        tooltip_hedge = f"Hedge rate for {date_str} Shift {shift_num}: {hedge_rate:+.1f}%"
+        tooltip_hedge = f"Double Click to edit hedge rate for {date_str} Shift {shift_num}: {hedge_rate:+.1f}%"
         
         # Display hedge rate (spans 2 columns to match the table structure)
         html_content += f"<td class='hedge-row' colspan='2'>{hedge_display}<span class='tooltip-text'>{tooltip_hedge}</span></td>"
@@ -2238,6 +2238,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
