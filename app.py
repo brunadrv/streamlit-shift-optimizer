@@ -2206,7 +2206,15 @@ def main():
     st.markdown("*Hover over cells to see detailed breakdowns and comparisons*")
     html_table = create_combined_hc_attendance_table(filtered_hc_data, filtered_attendance_data, metrics["expected"])
     st.components.v1.html(html_table, height=500)
-    
+
+    st.markdown("""
+        <style>
+        div[data-testid="stExpander"] {
+            margin-top: -20px !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+        
     # Clean, compact hedge rate editor with expander
     with st.expander("✏️ **Edit Hedge Attendance Rates**", expanded=False):
         st.markdown("*Adjust attendance rates for specific dates and shifts. Changes apply to FTE and TEMP only.*")
@@ -2358,6 +2366,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
