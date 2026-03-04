@@ -1754,7 +1754,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
     custom_css = {
         ".ag-theme-streamlit": {
             "font-family": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-            "font-size": "13px",
+            "font-size": "11px",
             "--ag-border-color": "#dee2e6",
             "--ag-header-background-color": "#f8f9fa",
             "--ag-header-foreground-color": "#495057",
@@ -1762,7 +1762,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
             "--ag-borders-critical": "solid"
         },
         ".ag-header-cell": {
-            "font-size": "12px",
+            "font-size": "10px",
             "font-weight": "500",
             "text-align": "center",
             "border-right": "1px solid #dee2e6 !important",
@@ -2762,6 +2762,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
