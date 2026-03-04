@@ -1576,7 +1576,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
             'background-color': '#fafafa',
             'text-align': 'left',
             'padding-left': '12px',
-            'font-size': '13px'
+            'font-size': '11px'
         };
         
         // Add hyperlink styling for specific rows
@@ -1741,8 +1741,8 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
     
     gb.configure_grid_options(
         enableRangeSelection=False,
-        rowHeight=40,
-        headerHeight=50,
+        rowHeight=35,
+        headerHeight=45,
         suppressMovableColumns=True,
         getRowStyle=row_style_jscode,
         singleClickEdit=True,
@@ -1833,7 +1833,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
     
     # Calculate height
     num_rows = len(employee_types)
-    grid_height = 50 + (num_rows * 40) + 30
+    grid_height = 45 + (num_rows * 35) + 30
     
     return df, gridOptions, custom_css, grid_height
     """Create combined HC and Attendance Assumption table with color coding for variance"""
@@ -2762,6 +2762,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
