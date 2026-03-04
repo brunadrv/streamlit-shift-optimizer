@@ -1581,7 +1581,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
         
         // Add hyperlink styling for specific rows
         var empType = params.data['Type'];
-        if (empType === 'Overtime (VEH/MEH)' || empType === 'Day Labor (WW/GS)') {
+        if (empType === 'Overtime (VEH/MEH) 🔗' || empType === 'Day Labor (WW/GS) 🔗') {
             style['color'] = '#2E4057';
             style['text-decoration'] = 'underline';
             style['text-decoration-style'] = 'dashed';
@@ -2762,6 +2762,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
