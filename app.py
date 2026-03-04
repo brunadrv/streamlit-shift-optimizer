@@ -1762,7 +1762,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
             "--ag-borders-critical": "solid"
         },
         ".ag-header-cell": {
-            "font-size": "10px",
+            "font-size": "13px",
             "font-weight": "500",
             "text-align": "center",
             "border-right": "1px solid #dee2e6 !important",
@@ -1845,7 +1845,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
         width: 100%;
         border-collapse: collapse;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        font-size: 12px;
+        font-size: 11px;
         margin: 10px 0;
     }
     .combined-table th {
@@ -1886,7 +1886,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
         border: 1px solid #ddd;
         padding: 6px 8px;
         text-align: center;
-        font-size: 12px;
+        font-size: 11px;
         min-height: 35px;
         display: flex;
         align-items: center;
@@ -2762,6 +2762,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
