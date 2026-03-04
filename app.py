@@ -1424,8 +1424,8 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
         'TEMP', 
         'NEW HIRES',
         'Day Labor (Flex)',
-        'Day Labor (WW/GS)',
-        'Overtime (VEH/MEH)',
+        'Day Labor (WW/GS) 🔗',
+        'Overtime (VEH/MEH) 🔗',
         'Time Off (VER/MTO)',
         'Hedge Attendance Rate (+/-) ✏️',
         'Total Expected HC'
@@ -2762,6 +2762,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
