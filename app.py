@@ -1418,7 +1418,7 @@ def generate_dynamic_table_data(location, department, week, selected_dates, shif
 def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attendance_data, expected_hc_total):
     """Create combined HC and Attendance Assumption table using AG-Grid with inline editing for hedge row"""
     
-    # Employee types in order
+    # Types in order
     employee_types = [
         'FTE',
         'TEMP', 
@@ -1474,7 +1474,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
     for emp_type in employee_types:
         if emp_type == 'Hedge Attendance Rate (+/-) ✏️':
             # Hedge row
-            table_data['Employee Type'].append(emp_type)
+            table_data['Type'].append(emp_type)
             for idx, shift_key in enumerate(columns_list):
                 parts = shift_key.split(' ')
                 date_str = parts[0]
@@ -1491,7 +1491,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
                 
         elif emp_type == 'Total Expected HC':
             # Total row
-            table_data['Employee Type'].append(emp_type)
+            table_data['Type'].append(emp_type)
             for idx, shift_key in enumerate(columns_list):
                 hc_data = filtered_hc_data.get(shift_key, {})
                 attendance_data = filtered_attendance_data.get(shift_key, {})
@@ -1527,8 +1527,8 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
                 table_data[f'{col_prefix}_Tooltip'].append('')
                 table_data[f'{col_prefix}_Attendance_Tooltip'].append('')
         else:
-            # Regular employee type row
-            table_data['Employee Type'].append(emp_type)
+            # Regular Type row
+            table_data['Type'].append(emp_type)
             data_key = data_key_mapping.get(emp_type, emp_type)
             att_key = attendance_key_mapping.get(emp_type, f'{emp_type} Attendance Assumption')
             
@@ -1560,10 +1560,10 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
     # JavaScript functions for AG-Grid
     row_style_jscode = JsCode("""
     function(params) {
-        if (params.data['Employee Type'].includes('Hedge Attendance Rate')) {
+        if (params.data['Type'].includes('Hedge Attendance Rate')) {
             return {'background-color': '#fffbea'};
         }
-        if (params.data['Employee Type'] === 'Total Expected HC') {
+        if (params.data['Type'] === 'Total Expected HC') {
             return {'background-color': '#e8f4f8', 'font-weight': '500'};
         }
         return null;
@@ -1580,7 +1580,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
         };
         
         // Add hyperlink styling for specific rows
-        var empType = params.data['Employee Type'];
+        var empType = params.data['Type'];
         if (empType === 'Overtime (VEH/MEH)' || empType === 'Day Labor (WW/GS)') {
             style['color'] = '#2E4057';
             style['text-decoration'] = 'underline';
@@ -1636,7 +1636,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
     
     col_span_jscode = JsCode("""
     function(params) {
-        var employeeType = params.data['Employee Type'];
+        var employeeType = params.data['Type'];
         var field = params.colDef.field;
         
         if (employeeType.includes('Hedge Attendance Rate') || employeeType === 'Total Expected HC') {
@@ -1653,7 +1653,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
     
     cell_editable_jscode = JsCode("""
     function(params) {
-        var employeeType = params.data['Employee Type'];
+        var employeeType = params.data['Type'];
         var field = params.colDef.field;
         
         if (employeeType.includes('Hedge Attendance Rate')) {
@@ -1667,7 +1667,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
     
     value_formatter_jscode = JsCode("""
     function(params) {
-        var employeeType = params.data['Employee Type'];
+        var employeeType = params.data['Type'];
         
         if (employeeType.includes('Hedge Attendance Rate')) {
             if (params.value === '' || params.value === null || params.value === undefined) {
@@ -1785,8 +1785,8 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
     # Create column definitions
     columnDefs = [
         {
-            'field': 'Employee Type',
-            'headerName': 'Employee Type',
+            'field': 'Type',
+            'headerName': 'Type',
             'editable': False,
             'cellStyle': first_col_style_jscode,
             'width': 220,
@@ -1961,7 +1961,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
     </style>
     """
     
-    # Employee types in order
+    # Types in order
     employee_types = [
         'FTE',
         'TEMP', 
@@ -2012,7 +2012,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
     html_content += "<table class='combined-table'>"
     
     # Header row
-    html_content += "<tr><th>Employee Type</th>"
+    html_content += "<tr><th>Type</th>"
     for shift_key in columns:
         parts = shift_key.split(' ')
         date = parts[0]
@@ -2157,7 +2157,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
             else:
                 hedged_attendance_pct = attendance_pct
             
-            # Calculate expected HC for this employee type
+            # Calculate expected HC for this Type
             total_expected_hc += scheduled_hc * hedged_attendance_pct
         
         # Round to nearest integer
@@ -2366,7 +2366,7 @@ def create_shift_breakdown_text(filtered_shift_data, selected_dates, shifts, met
                         else:
                             hedged_attendance_pct = attendance_pct
                         
-                        # Calculate expected HC for this employee type
+                        # Calculate expected HC for this Type
                         total_expected_hc += scheduled_hc * hedged_attendance_pct
                     
                     value = round(total_expected_hc)
@@ -2661,7 +2661,7 @@ def main():
     
     # Update hedge rates from edited table
     updated_df = grid_response['data']
-    hedge_row = updated_df[updated_df['Employee Type'].str.contains('Hedge Attendance Rate', na=False)]
+    hedge_row = updated_df[updated_df['Type'].str.contains('Hedge Attendance Rate', na=False)]
     
     if not hedge_row.empty:
         columns_list = sorted(list(filtered_hc_data.keys()))
@@ -2762,6 +2762,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
