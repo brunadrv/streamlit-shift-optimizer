@@ -1455,7 +1455,7 @@ def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attend
     columns_list = sorted(list(filtered_hc_data.keys()))
     
     # Build dataframe
-    table_data = {'Employee Type': []}
+    table_data = {'Type': []}
     
     # Initialize columns for each shift
     for idx, shift_key in enumerate(columns_list):
@@ -2635,7 +2635,7 @@ def main():
             <span>10-20% variance from last week</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-            <span>✏️ Click cells in the hedge row to edit (type 10 or -5, % added automatically)</span>
+            <span>✏️ Click cells in the hedge row to edit (type 10 or -5, % added automatically and calculated with FTE/TEMP Attendance Assumptions)</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -2762,6 +2762,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
