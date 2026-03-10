@@ -3065,7 +3065,7 @@ def main():
             <span>💡 Hover any cell to see <strong>absolute HC changes</strong> and cohort breakdown</span>
         </div>
         <div style="display: flex; align-items: center; gap: 8px;">
-            <span>✏️ Click cells in the hedge row to edit (type 10 or -5, % added automatically)</span>
+            <span>✏️ Click cells in the hedge row to + or - Att. Assumptions for FTE and TEMP</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
@@ -3223,6 +3223,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 
