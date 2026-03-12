@@ -1,0 +1,3277 @@
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+import plotly.graph_objects as go
+from datetime import datetime, timedelta
+import numpy as np
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode, JsCode
+
+# Page configuration
+st.set_page_config(
+    page_title="Labor Planning Shift Optimizer",
+    page_icon="🏭",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS for styling
+st.markdown("""
+<style>
+    .main-header {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #2E4057;
+        text-align: left;
+        margin-bottom: 1rem;
+    }
+    .location-info {
+        font-size: 1rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+    .week-info {
+        font-size: 1.2rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+    .shift-info {
+        font-size: 1.2rem;
+        color: #666;
+        margin-bottom: 2rem;
+    }
+    .metric-large {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #1f77b4;
+    }
+    .metric-change {
+        font-size: 1rem;
+        color: #2ca02c;
+        font-weight: bold;
+    }
+    .metric-change-up {
+        font-size: 1rem;
+        color: #2ca02c;
+        font-weight: bold;
+    }
+    .metric-change-down {
+        font-size: 1rem;
+        color: #d62728;
+        font-weight: bold;
+    }
+    .metric-label {
+        font-size: 1rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+    .gap-negative {
+        color: #d62728;
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    .gap-positive {
+        color: #28a745;
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    .gap-neutral {
+        color: #666;
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+    .gap-status {
+        color: #d62728;
+        font-size: 1rem;
+        font-weight: bold;
+    }
+    .department-table {
+        margin: 1rem 0;
+    }
+    .alert-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin: 1rem 0;
+    }
+    .section-header {
+        font-size: 1.7rem;
+        font-weight: bold;
+        color: #2E4057;
+        margin: 2rem 0 1rem 0;
+        border-bottom: 2px solid #ddd;
+        padding-bottom: 0.5rem;
+    }
+    .department-detail {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin: 1rem 0;
+        border: 1px solid #dee2e6;
+    }
+    /* Reduce spacing between plotly charts and expanders */
+    .stExpander {
+        margin-top: -20px !important;
+    }
+    .streamlit-expanderHeader {
+        margin-top: -10px !important;
+    }
+    div[data-testid="stExpander"] > div > div {
+        margin-top: -15px !important;
+    }
+    /* Compact filter styling */
+    .filter-section {
+        margin: 10px 0;
+        padding: 10px 0;
+    }
+    .stMultiSelect {
+        margin-bottom: 0 !important;
+    }
+    .stTextInput {
+        margin-bottom: 0 !important;
+    }
+    div[data-baseweb="select"] {
+        margin-top: -5px;
+    }
+    .stMultiSelect label, .stTextInput label {
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+        margin-bottom: 2px !important;
+    }
+    div[data-testid="stHorizontalBlock"] {
+        gap: 0.5rem !important;
+    }
+    /* Style for selected filter tags (the red chips) */
+    div[data-baseweb="tag"] {
+        font-size: 0.75rem !important;
+        padding: 2px 8px !important;
+    }
+    span[data-baseweb="tag"] span {
+        font-size: 0.75rem !important;
+    }
+    /* Shift breakdown styling */
+    .shift-breakdown {
+        font-size: 0.75rem;
+        color: #666;
+        line-height: 1.4;
+        margin-top: 5px;
+    }
+    /* Style number inputs to look like table cells */
+    div[data-testid="stNumberInput"] input {
+        text-align: center !important;
+        font-size: 12px !important;
+        padding: 6px 8px !important;
+        border: 1px solid #ddd !important;
+    }
+    div[data-testid="stNumberInput"] > div {
+        background-color: transparent !important;
+    }
+
+</style>
+""", unsafe_allow_html=True)
+
+# Initialize session state for data
+if 'data_initialized' not in st.session_state:
+    st.session_state.data_initialized = True
+    # Initialize view toggle - updated to 4 views
+    st.session_state.current_view = "Shift Summary"
+    
+    # Sample data based on the mockup - exact values from PDF
+    st.session_state.departments = {
+        'Kitchen': -7,
+        'Production': 7,
+        'Sanitation': 10,
+        'Quality': 0,
+        'Warehouse': -2,
+        'Fulfillment': 0,
+        'Shipping': 5
+    }
+    
+    # Initialize hedge attendance rates storage
+    # Key format: "2026-02-12_1st" (date_shift)
+    st.session_state.hedge_rates = {}
+    
+    # Initialize table view mode
+    st.session_state.table_view_mode = "Roster & Expected"
+
+
+ 
+    st.session_state.employee_data = [
+        # Kitchen Department
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP001', 'Employee Name': 'John Smith', 'Hire Date': '2023-01-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP002', 'Employee Name': 'Mary Davis', 'Hire Date': '2022-08-20', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'TEMP', 'Employee ID': 'TMP101', 'Employee Name': 'Mike Wilson', 'Hire Date': '2026-02-01', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'EMP005', 'Employee Name': 'Carlos Rodriguez', 'Hire Date': '2023-11-08', 'Workday Schedule': '06:00-14:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '2nd', 'Worker Type': 'FTE', 'Employee ID': 'EMP003', 'Employee Name': 'Lisa Brown', 'Hire Date': '2021-12-10', 'Workday Schedule': '14:00-22:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '2nd', 'Worker Type': 'NEW HIRES', 'Employee ID': 'NEW001', 'Employee Name': 'David Garcia', 'Hire Date': '2026-02-10', 'Workday Schedule': '14:00-22:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Training'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '2nd', 'Worker Type': 'TEMP', 'Employee ID': 'TMP102', 'Employee Name': 'Amanda Taylor', 'Hire Date': '2026-01-28', 'Workday Schedule': '14:00-22:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '3rd', 'Worker Type': 'FTE', 'Employee ID': 'EMP004', 'Employee Name': 'Jennifer Lee', 'Hire Date': '2023-06-05', 'Workday Schedule': '22:00-06:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '3rd', 'Worker Type': 'FLEX', 'Employee ID': 'FLX201', 'Employee Name': 'Robert Martinez', 'Hire Date': '2024-03-12', 'Workday Schedule': '22:00-06:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Flexible'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '3rd', 'Worker Type': 'FTE', 'Employee ID': 'EMP006', 'Employee Name': 'Patricia White', 'Hire Date': '2022-05-18', 'Workday Schedule': '22:00-06:00', 'Department': 'Kitchen', 'Manager': 'Sarah Johnson', 'Roster Bucket': 'Active'},
+        
+        # Production Department
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'PRD001', 'Employee Name': 'James Wilson', 'Hire Date': '2023-03-22', 'Workday Schedule': '06:00-14:00', 'Department': 'Production', 'Manager': 'Michael Thompson', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'PRD002', 'Employee Name': 'Emma Johnson', 'Hire Date': '2022-11-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Production', 'Manager': 'Michael Thompson', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'TEMP', 'Employee ID': 'TMP201', 'Employee Name': 'Kevin Chen', 'Hire Date': '2026-01-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Production', 'Manager': 'Michael Thompson', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '2nd', 'Worker Type': 'FTE', 'Employee ID': 'PRD003', 'Employee Name': 'Rachel Adams', 'Hire Date': '2023-07-10', 'Workday Schedule': '14:00-22:00', 'Department': 'Production', 'Manager': 'Michael Thompson', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '2nd', 'Worker Type': 'FLEX', 'Employee ID': 'FLX301', 'Employee Name': 'Anthony Davis', 'Hire Date': '2024-01-08', 'Workday Schedule': '14:00-22:00', 'Department': 'Production', 'Manager': 'Michael Thompson', 'Roster Bucket': 'Flexible'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '3rd', 'Worker Type': 'FTE', 'Employee ID': 'PRD004', 'Employee Name': 'Stephanie Lee', 'Hire Date': '2022-09-05', 'Workday Schedule': '22:00-06:00', 'Department': 'Production', 'Manager': 'Michael Thompson', 'Roster Bucket': 'Active'},
+        
+        # Sanitation Department
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'SAN001', 'Employee Name': 'Daniel Brown', 'Hire Date': '2023-02-14', 'Workday Schedule': '06:00-14:00', 'Department': 'Sanitation', 'Manager': 'Linda Rodriguez', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'TEMP', 'Employee ID': 'TMP301', 'Employee Name': 'Maria Gonzalez', 'Hire Date': '2026-01-20', 'Workday Schedule': '06:00-14:00', 'Department': 'Sanitation', 'Manager': 'Linda Rodriguez', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '2nd', 'Worker Type': 'FTE', 'Employee ID': 'SAN002', 'Employee Name': 'Christopher Moore', 'Hire Date': '2023-05-30', 'Workday Schedule': '14:00-22:00', 'Department': 'Sanitation', 'Manager': 'Linda Rodriguez', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '3rd', 'Worker Type': 'FTE', 'Employee ID': 'SAN003', 'Employee Name': 'Jessica Taylor', 'Hire Date': '2022-12-12', 'Workday Schedule': '22:00-06:00', 'Department': 'Sanitation', 'Manager': 'Linda Rodriguez', 'Roster Bucket': 'Active'},
+        
+        # Quality Department
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'QUA001', 'Employee Name': 'Thomas Anderson', 'Hire Date': '2023-04-18', 'Workday Schedule': '06:00-14:00', 'Department': 'Quality', 'Manager': 'Janet Wilson', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'QUA002', 'Employee Name': 'Nicole Martinez', 'Hire Date': '2022-10-25', 'Workday Schedule': '06:00-14:00', 'Department': 'Quality', 'Manager': 'Janet Wilson', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '2nd', 'Worker Type': 'NEW HIRES', 'Employee ID': 'NEW002', 'Employee Name': 'Brian Clark', 'Hire Date': '2026-02-05', 'Workday Schedule': '14:00-22:00', 'Department': 'Quality', 'Manager': 'Janet Wilson', 'Roster Bucket': 'Training'},
+        
+        # Warehouse Department
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'WHR001', 'Employee Name': 'Matthew Garcia', 'Hire Date': '2023-01-30', 'Workday Schedule': '06:00-14:00', 'Department': 'Warehouse', 'Manager': 'Robert Kim', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'WHR002', 'Employee Name': 'Ashley Thompson', 'Hire Date': '2022-08-15', 'Workday Schedule': '06:00-14:00', 'Department': 'Warehouse', 'Manager': 'Robert Kim', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'TEMP', 'Employee ID': 'TMP401', 'Employee Name': 'Ryan Miller', 'Hire Date': '2026-01-25', 'Workday Schedule': '06:00-14:00', 'Department': 'Warehouse', 'Manager': 'Robert Kim', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '2nd', 'Worker Type': 'FTE', 'Employee ID': 'WHR003', 'Employee Name': 'Michelle White', 'Hire Date': '2023-06-20', 'Workday Schedule': '14:00-22:00', 'Department': 'Warehouse', 'Manager': 'Robert Kim', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '3rd', 'Worker Type': 'FLEX', 'Employee ID': 'FLX401', 'Employee Name': 'Steven Lopez', 'Hire Date': '2024-02-14', 'Workday Schedule': '22:00-06:00', 'Department': 'Warehouse', 'Manager': 'Robert Kim', 'Roster Bucket': 'Flexible'},
+        
+        # Fulfillment Department
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'FUL001', 'Employee Name': 'Amanda Rodriguez', 'Hire Date': '2023-03-08', 'Workday Schedule': '06:00-14:00', 'Department': 'Fulfillment', 'Manager': 'David Chang', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'TEMP', 'Employee ID': 'TMP501', 'Employee Name': 'Jonathan Smith', 'Hire Date': '2026-02-08', 'Workday Schedule': '06:00-14:00', 'Department': 'Fulfillment', 'Manager': 'David Chang', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '2nd', 'Worker Type': 'FTE', 'Employee ID': 'FUL002', 'Employee Name': 'Samantha Davis', 'Hire Date': '2022-11-30', 'Workday Schedule': '14:00-22:00', 'Department': 'Fulfillment', 'Manager': 'David Chang', 'Roster Bucket': 'Active'},
+        
+        # Shipping Department
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'SHP001', 'Employee Name': 'Gregory Wilson', 'Hire Date': '2023-05-12', 'Workday Schedule': '06:00-14:00', 'Department': 'Shipping', 'Manager': 'Patricia Lee', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '1st', 'Worker Type': 'FTE', 'Employee ID': 'SHP002', 'Employee Name': 'Kimberly Johnson', 'Hire Date': '2022-07-22', 'Workday Schedule': '06:00-14:00', 'Department': 'Shipping', 'Manager': 'Patricia Lee', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '2nd', 'Worker Type': 'TEMP', 'Employee ID': 'TMP601', 'Employee Name': 'Eric Brown', 'Hire Date': '2026-01-18', 'Workday Schedule': '14:00-22:00', 'Department': 'Shipping', 'Manager': 'Patricia Lee', 'Roster Bucket': 'Active'},
+        {'Date': '2026-02-12', 'Day of Week': 'Monday', 'Shift': '2nd', 'Worker Type': 'NEW HIRES', 'Employee ID': 'NEW003', 'Employee Name': 'Catherine Martinez', 'Hire Date': '2026-02-12', 'Workday Schedule': '14:00-22:00', 'Department': 'Shipping', 'Manager': 'Patricia Lee', 'Roster Bucket': 'Training'},
+    ]
+    
+    # Add punch data to employees
+    import random
+    random.seed(42)  # Consistent punch data
+    
+    # Punch rates should be very close to attendance assumptions (±1-3% variance)
+    # This ensures Actual Punches ≈ Expected HC
+    punch_rates = {
+        'FTE': 0.91,          # Attendance assumption ~90%, so 91% is 1% over
+        'TEMP': 0.86,         # Attendance assumption ~84%, so 86% is 2% over
+        'NEW HIRES': 0.48,    # Show up rate ~50%, so 48% is 2% under
+        'FLEX': 0.51,         # Show up rate ~50%, so 51% is 1% over
+        'WW/GS': 0.99         # Show up rate ~100%, so 99% is 1% under
+    }
+    
+    for emp in st.session_state.employee_data:
+        worker_type = emp['Worker Type']
+        punch_rate = punch_rates.get(worker_type, 0.90)
+        
+        # Determine if employee punched in
+        punched_in = random.random() < punch_rate
+        emp['Punched_In'] = punched_in
+        
+        if punched_in:
+            # Parse schedule to add variance to punch times
+            schedule = emp['Workday Schedule']
+            start_time, end_time = schedule.split('-')
+            start_hour, start_min = map(int, start_time.split(':'))
+            end_hour, end_min = map(int, end_time.split(':'))
+            
+            # Add random variance to punch times (±5 minutes)
+            punch_variance = random.randint(-5, 5)
+            punch_hour = start_hour
+            punch_min = start_min + punch_variance
+            
+            # Handle minute overflow
+            if punch_min >= 60:
+                punch_hour += 1
+                punch_min -= 60
+            elif punch_min < 0:
+                punch_hour -= 1
+                punch_min += 60
+            
+            emp['Punch_Time'] = f"{punch_hour:02d}:{punch_min:02d}"
+            
+            # Calculate hours worked (with small variance)
+            scheduled_hours = ((end_hour * 60 + end_min) - (start_hour * 60 + start_min)) / 60
+            hours_variance = random.uniform(-0.25, 0.25)
+            hours_worked = round(scheduled_hours + hours_variance, 2)
+            emp['Hours_Worked'] = hours_worked
+            
+            # Punch out time
+            punch_out_variance = random.randint(-5, 5)
+            punch_out_hour = end_hour
+            punch_out_min = end_min + punch_out_variance
+            
+            if punch_out_min >= 60:
+                punch_out_hour += 1
+                punch_out_min -= 60
+            elif punch_out_min < 0:
+                punch_out_hour -= 1
+                punch_out_min += 60
+                
+            emp['Punch_Out_Time'] = f"{punch_out_hour:02d}:{punch_out_min:02d}"
+        else:
+            emp['Punch_Time'] = None
+            emp['Punch_Out_Time'] = None
+            emp['Hours_Worked'] = 0
+
+
+def calculate_metrics():
+    """Calculate key metrics for the dashboard"""
+    expected_hc = 80
+    needed_hc = 100
+    gap = expected_hc - needed_hc
+    gap_percentage = (gap / needed_hc) * 100
+    
+    return {
+        'expected_hc': expected_hc,
+        'needed_hc': needed_hc,
+        'gap': gap,
+        'gap_percentage': gap_percentage
+    }
+
+def create_plotly_table_with_tooltips(df, hover_data=None):
+    """Create a Plotly table with hover tooltips"""
+    
+    # Prepare header values
+    headers = list(df.columns)
+    
+    # Prepare cell values
+    values = []
+    hover_texts = []
+    
+    for col in headers:
+        values.append(df[col].tolist())
+        
+        # Create hover text for each cell
+        if hover_data and col in hover_data:
+            hover_texts.append([hover_data[col].get(i, '') for i in range(len(df))])
+        else:
+            hover_texts.append([''] * len(df))
+    
+    # Create the table
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=headers,
+            fill_color='#f1f1f1',
+            align='center',
+            font=dict(size=12, color='#2E4057'),
+            height=40
+        ),
+        cells=dict(
+            values=values,
+            fill_color='white',
+            align='center',
+            font=dict(size=11),
+            height=35,
+        )
+    )])
+    
+    fig.update_layout(
+        height=400,
+        margin=dict(l=0, r=0, t=20, b=0)
+    )
+    
+    return fig
+
+def create_transposed_shift_summary_table_with_tooltips(filtered_data=None):
+    """Create transposed shift summary table matching the screenshot structure"""
+    
+    # Use filtered data if provided, otherwise use all data
+    data_to_use = filtered_data if filtered_data else st.session_state.shift_summary_transposed
+    
+    # Prepare the transposed structure
+    columns = list(data_to_use.keys())
+    rows = ['Total Needed', 'Total Expected', 'Total Gap', 'Total Attendance Assumption', 'Total Punches']
+    
+    # Create the data structure for Plotly table
+    header_values = [''] + columns  # Empty first cell, then column headers
+    
+    # Prepare data for each row
+    table_data = []
+    hover_data = {}
+    
+    for row_name in rows:
+        row_data = [row_name]  # First cell is the row label
+        hover_texts = ['']  # No hover for row labels
+        
+        for col in columns:
+            value = st.session_state.shift_summary_transposed[col][row_name]
+            row_data.append(str(value))
+            
+            # Add tooltip data based on the row type
+            if row_name == 'Total Needed':
+                hover_texts.append(st.session_state.shift_summary_transposed[col]['tooltip_needed'])
+            elif row_name == 'Total Expected':
+                hover_texts.append(st.session_state.shift_summary_transposed[col]['tooltip_expected'])
+            elif row_name == 'Total Gap':
+                hover_texts.append(st.session_state.shift_summary_transposed[col]['tooltip_gap'])
+            elif row_name == 'Total Attendance Assumption':
+                hover_texts.append(st.session_state.shift_summary_transposed[col]['tooltip_attendance'])
+            elif row_name == 'Total Punches':
+                hover_texts.append(st.session_state.shift_summary_transposed[col]['tooltip_punches'])
+            else:
+                hover_texts.append('')  # No tooltip for Date, Week Day, Shift
+        
+        table_data.append(row_data)
+        hover_data[row_name] = hover_texts
+    
+    # Create color coding for cells
+    fill_colors = []
+    for i, row_name in enumerate([''] + rows):  # Include header row
+        if i == 0:  # Header row
+            fill_colors.append(['#f1f1f1'] * len(header_values))
+        else:
+            row_colors = ['#f9f9f9']  # Row label color
+            for col in columns:
+                if row_name == 'Total Gap':
+                    gap_value = st.session_state.shift_summary_transposed[col]['Total Gap']
+                    if gap_value < 0:
+                        row_colors.append('#ffebee')  # Light red for negative gap
+                    elif gap_value > 0:
+                        row_colors.append('#e8f5e8')  # Light green for positive gap
+                    else:
+                        row_colors.append('white')
+                else:
+                    row_colors.append('white')
+            fill_colors.append(row_colors)
+    
+    # Flatten the data for Plotly
+    cell_values = []
+    cell_colors = []
+    
+    # Transpose the data for Plotly (columns become rows)
+    for col_idx in range(len(header_values)):
+        col_data = []
+        col_color = []
+        for row_idx in range(len(table_data) + 1):  # +1 for header
+            if row_idx == 0:  # Header
+                col_data.append(header_values[col_idx])
+                col_color.append('#f1f1f1')
+            else:
+                col_data.append(table_data[row_idx - 1][col_idx])
+                col_color.append(fill_colors[row_idx][col_idx])
+        cell_values.append(col_data)
+        cell_colors.append(col_color)
+    
+    # Create the Plotly table
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=['Date & Shift'] + columns,
+            fill_color='#f1f1f1',
+            align='center',
+            font=dict(size=12, color='#2E4057'),
+            height=30
+        ),
+        cells=dict(
+            values=[['Total Needed', 'Total Expected', 'Total Gap', 'Total Attendance Assumption', 'Total Punches']] + 
+                   [[data_to_use[col][row] for row in rows] for col in columns],
+            fill_color=[['#f9f9f9'] * len(rows)] + 
+                      [['white' for row in rows] for col in columns],
+            align='center',
+            font=dict(size=12),
+            height=25,
+        )
+    )])
+    
+    fig.update_layout(
+        height=300,
+        margin=dict(l=0, r=0, t=20, b=0),  # Use valid margin values
+        title="Shift Summary - Hover over values to see details"
+    )
+    
+    return fig
+
+def create_weekly_hc_details_table_with_tooltips():
+    """Create transposed HC details table matching the screenshot structure"""
+    
+    # Prepare the transposed structure
+    columns = list(st.session_state.weekly_hc_details_transposed.keys())
+    rows = ['FTE', 'TEMP', 'NEW HIRES', 'FLEX', 'WW/GS', 'VEH/MEH', 'PTO']
+    
+    # Create the Plotly table
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=['Date & Shift'] + columns,
+            fill_color='#f1f1f1',
+            align='center',
+            font=dict(size=12, color='#2E4057'),
+            height=30
+        ),
+        cells=dict(
+            values=[['FTE', 'TEMP', 'NEW HIRES', 'FLEX', 'WW/GS', 'VEH/MEH', 'PTO']] + 
+                   [[st.session_state.weekly_hc_details_transposed[col][row] for row in rows] for col in columns],
+            fill_color=[['#f9f9f9'] * len(rows)] + 
+                      [['white' for row in rows] for col in columns],
+            align='center',
+            font=dict(size=12),
+            height=25,
+        )
+    )])
+    
+    fig.update_layout(
+        height=350,
+        margin=dict(l=0, r=0, t=20, b=0),  # Use valid margin values
+        title="HC Details - Hover over values to see details"
+    )
+    
+    return fig
+
+def create_transposed_attendance_assumptions_table(filtered_data=None):
+    """Create transposed attendance assumptions table matching the screenshot structure - UPDATED TO USE TRANSPOSED VERSION"""
+    
+    # Use filtered data if provided, otherwise use all data
+    data_to_use = filtered_data if filtered_data else st.session_state.attendance_assumptions_transposed
+    
+    # Prepare the transposed structure
+    columns = list(data_to_use.keys())
+    rows = ['FTE Attendance Assumption', 'TEMP Attendance Assumption', 'NEW HIRES Show Up Rate', 'FLEX Show Up Rate', 'WW/GS Show Up Rate', 'VEH Show Up Rate']
+    
+    def get_tooltip_for_cell(col, row):
+        """Get tooltip for each cell based on column and row"""
+        data = data_to_use[col]
+        if row == 'FTE Attendance Assumption' and 'tooltip_fte' in data:
+            return data['tooltip_fte']
+        elif row == 'TEMP Attendance Assumption' and 'tooltip_temp' in data:
+            return data['tooltip_temp']  
+        elif row == 'NEW HIRES Show Up Rate' and 'tooltip_newhires' in data:
+            return data['tooltip_newhires']
+        elif row == 'FLEX Show Up Rate' and 'tooltip_flex' in data:
+            return data['tooltip_flex']
+        elif row == 'WW/GS Show Up Rate' and 'tooltip_wwgs' in data:
+            return data['tooltip_wwgs']
+        elif row == 'VEH Show Up Rate' and 'tooltip_veh' in data:
+            return data['tooltip_veh']
+        else:
+            return f"{row}: {data.get(row, 'N/A')}"
+    
+    # Prepare cell values and colors for Plotly
+    cell_values = [rows]  # First column is row labels
+    cell_colors = [['#f9f9f9'] * len(rows)]  # First column color
+    
+    for col in columns:
+        col_values = []
+        col_colors = []
+        for row in rows:
+            value = data_to_use[col][row]
+            col_values.append(value)
+            col_colors.append('white')
+        cell_values.append(col_values)
+        cell_colors.append(col_colors)
+    
+    # Create the Plotly table
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=['Date & Shift'] + columns,  # Empty first header for row labels column
+            fill_color='#f1f1f1',
+            align='center',
+            font=dict(size=12, color='#2E4057'),
+            height=30
+        ),
+        cells=dict(
+            values=cell_values,
+            fill_color=cell_colors,
+            align='center',
+            font=dict(size=12),
+            height=25,
+        )
+    )])
+    
+    fig.update_layout(
+        height=350,
+        margin=dict(l=0, r=0, t=20, b=0),  # Use valid margin values
+        title="Attendance Assumptions - Transposed View"
+    )
+    
+    return fig
+
+def create_transposed_hc_details_table_with_tooltips(filtered_data=None):
+    """Create transposed HC details table matching the screenshot structure"""
+    
+    # Use filtered data if provided, otherwise use all data
+    data_to_use = filtered_data if filtered_data else st.session_state.weekly_hc_details_transposed
+    
+    # Prepare the transposed structure
+    columns = list(data_to_use.keys())
+    rows = ['FTE', 'TEMP', 'NEW HIRES', 'FLEX', 'WW/GS', 'VEH/MEH', 'PTO']
+    
+    # Create the Plotly table
+    fig = go.Figure(data=[go.Table(
+        header=dict(
+            values=['Date & Shift'] + columns,
+            fill_color='#f1f1f1',
+            align='center',
+            font=dict(size=12, color='#2E4057'),
+            height=30
+        ),
+        cells=dict(
+            values=[['FTE', 'TEMP', 'NEW HIRES', 'FLEX', 'WW/GS', 'VEH/MEH', 'PTO']] + 
+                   [[data_to_use[col][row] for row in rows] for col in columns],
+            fill_color=[['#f9f9f9'] * len(rows)] + 
+                      [['white' for row in rows] for col in columns],
+            align='center',
+            font=dict(size=12),
+            height=25,
+        )
+    )])
+    
+    fig.update_layout(
+        height=350,
+        margin=dict(l=0, r=0, t=20, b=0),
+        title="HC Details - Hover over values to see details"
+    )
+    
+    return fig
+
+def create_weekly_hc_details_table_with_tooltips():
+    """Create weekly HC details table with exact columns and tooltips - UPDATED TO USE TRANSPOSED VERSION"""
+    return create_transposed_hc_details_table_with_tooltips()
+
+def create_attendance_assumptions_table_with_tooltips():
+    """Create attendance assumptions table with exact columns and tooltips - UPDATED TO USE TRANSPOSED VERSION"""
+    return create_transposed_attendance_assumptions_table()
+
+def create_employee_details_table_with_tooltips(selected_dept, filtered_employees=None):
+    """Create employee details table with exact columns and tooltips"""
+    # Use filtered employees if provided, otherwise filter by department only
+    if filtered_employees is not None:
+        filtered_data = filtered_employees
+    else:
+        filtered_data = [emp for emp in st.session_state.employee_data if emp['Department'] == selected_dept]
+    
+    if not filtered_data:
+        return None
+    
+    # Create DataFrame with exact columns: Week, Day/Shift, Worker Type, Employee ID, Employee Name, Hire Date, Workday Schedule, Department, Manager, Roster Bucket
+    df = pd.DataFrame(filtered_data)
+    return create_plotly_table_with_tooltips(df)
+
+def create_employee_details_table(selected_dept):
+    """Create employee details table for selected department"""
+    # Filter employees by department
+    filtered_data = [emp for emp in st.session_state.employee_data if emp['Department'] == selected_dept]
+    df = pd.DataFrame(filtered_data)
+    return df
+
+def calculate_dynamic_metrics(location, department, week, selected_date, shifts):
+    """Calculate dynamic metrics based on filter selections"""
+    
+    # Base metrics that vary by location
+    base_metrics = {
+        "AZ Goodyear": {"needed": 100, "expected": 80, "gap": 20},
+        "IL Aurora": {"needed": 85, "expected": 75, "gap": 10}, 
+        "AZ Phoenix": {"needed": 120, "expected": 95, "gap": 25},
+        "IL Lake Zurich": {"needed": 90, "expected": 85, "gap": 5},
+        "IL Burr Ridge": {"needed": 75, "expected": 70, "gap": 5}
+    }
+    
+    # Department multipliers
+    dept_multipliers = {
+        "Kitchen": 1.0,
+        "Production": 0.8,
+        "Sanitation": 0.6,
+        "Quality": 0.4,
+        "Warehouse": 0.9,
+        "Fulfillment": 0.7,
+        "Shipping": 0.5
+    }
+    
+    # Week variations (recent weeks have different patterns)
+    week_variations = {
+        "2026-W08": 1.0,
+        "2026-W07": 0.95,
+        "2026-W09": 1.05,
+        "2026-W06": 0.9,
+        "2026-W10": 1.1
+    }
+    
+    # Shift adjustments (fewer shifts selected = lower numbers)
+    shift_multiplier = len(shifts) / 3.0 if shifts else 1.0
+    
+    # Get base metrics for location
+    base = base_metrics.get(location, base_metrics["AZ Goodyear"])
+    
+    # Apply all multipliers
+    dept_mult = dept_multipliers.get(department, 1.0)
+    week_mult = week_variations.get(week, 1.0)
+    
+    # Calculate final metrics
+    needed = int(base["needed"] * dept_mult * week_mult * shift_multiplier)
+    expected = int(base["expected"] * dept_mult * week_mult * shift_multiplier)
+    gap = needed - expected
+    
+    # Calculate percentage changes vs "last week"
+    needed_change = int((week_mult - 0.95) * 100)  # Simulate vs previous week
+    expected_change = int((week_mult - 0.9) * 100 + 10)  # Different baseline
+    
+    gap_change = 3  # Default gap change vs previous week
+    
+    # Calculate punches (approximately 90-95% of expected)
+    punches = int(expected * 0.92)
+    punches_change = 4  # Default punches change vs previous week
+    
+    return {
+        "needed": needed,
+        "expected": expected, 
+        "gap": gap,
+        "needed_change": needed_change,
+        "expected_change": expected_change,
+        "gap_change": gap_change,
+        "punches": punches,
+        "punches_change": punches_change,
+        "gap_percentage": int((gap / needed * 100)) if needed > 0 else 0
+    }
+
+def get_gap_status_info(gap, gap_percentage):
+    """Get gap status with appropriate styling and messaging"""
+    if gap == 0:
+        return "✅ Fully Staffed", "gap-neutral", "#28a745"
+    elif gap > 0:
+        return f"↘️ Understaffed by {abs(gap_percentage)}%", "gap-negative", "#dc3545"
+    else:
+        return f"📊 Overstaffed by {abs(gap_percentage)}%", "gap-positive", "#28a745"
+
+def create_attendance_html_table_with_tooltips(filtered_attendance_data):
+    """Create HTML table with tooltips for attendance assumption data - transposed structure"""
+    
+    tooltip_css = """
+    <style>
+    .attendance-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 12px;
+        margin: 10px 0;
+    }
+    .attendance-table th {
+        background-color: #f1f1f1;
+        text-align: center; 
+        border: 1px solid #ddd;
+        font-size: 10px;
+    }
+    .attendance-table td {
+        padding: 6px 8px; 
+        text-align: center; 
+        border: 1px solid #ddd; 
+        position: relative;
+        cursor: help;
+    }
+    .attendance-table td.row-header {
+        background-color: #f9f9f9; 
+        font-weight: bold;
+        text-align: left;
+        cursor: default;
+    }
+    .attendance-table td.data-cell:hover {
+        background-color: #fff3e0 !important;
+    }
+    .attendance-table .tooltip-text {
+        visibility: hidden;
+        width: 320px;
+        background-color: #e65100;
+        color: #fff;
+        text-align: left;
+        border-radius: 6px;
+        padding: 10px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -160px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 11px;
+        line-height: 1.4;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .attendance-table .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #e65100 transparent transparent transparent;
+    }
+    .attendance-table td:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+    </style>
+    """
+    
+    # Prepare the transposed structure - metrics as rows, shifts as columns
+    columns = list(filtered_attendance_data.keys())
+    rows = ['FTE Attendance Assumption', 'TEMP Attendance Assumption', 'NEW HIRES Show Up Rate', 
+            'FLEX Show Up Rate', 'WW/GS Show Up Rate', 'VEH Show Up Rate']
+    
+    # Build HTML table
+    html_content = tooltip_css
+    html_content += "<table class='attendance-table'>"
+    
+    # Header row - empty cell + shift columns
+    html_content += "<tr><th></th>"
+    for shift_key in sorted(columns):
+        parts = shift_key.split(' ')
+        date = parts[0]
+        day = parts[1]
+        shift_num = parts[-1].split(' ')[-1]
+        html_content += f"<th>{date} {day}<br>Shift {shift_num}</th>"
+    html_content += "</tr>"
+    
+    # Data rows - each metric as a row
+    for row_name in rows:
+        html_content += "<tr>"
+        html_content += f"<td class='row-header'>{row_name}</td>"
+        
+        for shift_key in sorted(columns):
+            data = filtered_attendance_data[shift_key]
+            value = data[row_name]
+            
+            # Get appropriate tooltip
+            tooltip = ""
+            if row_name == 'FTE Attendance Assumption':
+                tooltip = data.get('tooltip_fte', '')
+            elif row_name == 'TEMP Attendance Assumption':
+                tooltip = data.get('tooltip_temp', '')
+            elif row_name == 'NEW HIRES Show Up Rate':
+                tooltip = data.get('tooltip_newhires', '')
+            elif row_name == 'FLEX Show Up Rate':
+                tooltip = data.get('tooltip_flex', '')
+            elif row_name == 'WW/GS Show Up Rate':
+                tooltip = data.get('tooltip_wwgs', '')
+            elif row_name == 'VEH Show Up Rate':
+                tooltip = data.get('tooltip_veh', '')
+            
+            # Create detailed tooltip content
+            parts = shift_key.split(' ')
+            date = parts[0]
+            day = parts[1]
+            shift_num = parts[-1].split(' ')[-1]
+            
+            tooltip_content = ""
+
+            if tooltip:
+
+                tooltip_content = tooltip.replace('\\n', '<br>')
+            else:
+                tooltip_content = f"{value}"
+            
+            html_content += f"""<td class='data-cell'>
+                {value}
+                <span class='tooltip-text'>{tooltip_content}</span>
+            </td>"""
+        
+        html_content += "</tr>"
+    
+    html_content += "</table>"
+    
+    return html_content
+
+def create_roster_hc_html_table_with_tooltips(filtered_hc_data):
+    """Create HTML table with tooltips for roster HC data - transposed structure"""
+    
+    tooltip_css = """
+    <style>
+    .hc-table {
+        width: 100%; 
+        border-collapse: collapse; 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 12px;
+        margin: 10px 0;
+    }
+    .hc-table th {
+        background-color: #f1f1f1; 
+        color: #2E4057; 
+        font-weight: bold; 
+        padding: 8px; 
+        text-align: center; 
+        border: 1px solid #ddd;
+        font-size: 11px;
+    }
+    .hc-table td {
+        padding: 6px 8px; 
+        text-align: center; 
+        border: 1px solid #ddd; 
+        position: relative;
+        cursor: help;
+    }
+    .hc-table td.row-header {
+        background-color: #f9f9f9; 
+        font-weight: bold;
+        text-align: left;
+        cursor: default;
+    }
+    .hc-table td.data-cell:hover {
+        background-color: #e8f5e8 !important;
+    }
+    .hc-table .tooltip-text {
+        visibility: hidden;
+        width: 300px;
+        background-color: #2d5016;
+        color: #fff;
+        text-align: left;
+        border-radius: 6px;
+        padding: 10px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -150px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 11px;
+        line-height: 1.4;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .hc-table .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #2d5016 transparent transparent transparent;
+    }
+    .hc-table td:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+    </style>
+    """
+    
+    # Prepare the transposed structure - metrics as rows, shifts as columns
+    columns = list(filtered_hc_data.keys())
+    rows = ['FTE', 'TEMP', 'NEW HIRES', 'FLEX', 'Total HC']
+    
+    # Build HTML table
+    html_content = tooltip_css
+    html_content += "<table class='hc-table'>"
+    
+    # Header row - empty cell + shift columns
+    html_content += "<tr><th></th>"
+    for shift_key in sorted(columns):
+        parts = shift_key.split(' ')
+        date = parts[0]
+        day = parts[1]
+        shift_num = parts[-1].split(' ')[-1]
+        html_content += f"<th>{date} {day}<br>Shift {shift_num}</th>"
+    html_content += "</tr>"
+    
+    # Data rows - each metric as a row
+    for row_name in rows:
+        html_content += "<tr>"
+        html_content += f"<td class='row-header'>{row_name}</td>"
+        
+        for shift_key in sorted(columns):
+            data = filtered_hc_data[shift_key]
+            
+            # Handle Total HC calculation
+            if row_name == 'Total HC':
+                fte_val = data.get('FTE', 0)
+                temp_val = data.get('TEMP', 0)
+                nh_val = data.get('NEW HIRES', 0)
+                flex_val = data.get('FLEX', 0)
+                value = fte_val + temp_val + nh_val + flex_val
+            else:
+                value = data.get(row_name, 0)
+            
+            # Get appropriate tooltip
+            tooltip = ""
+            if row_name == 'FTE':
+                tooltip = data.get('tooltip_fte', '')
+            elif row_name == 'TEMP':
+                tooltip = data.get('tooltip_temp', '')
+            elif row_name == 'NEW HIRES':
+                tooltip = data.get('tooltip_newhires', '')
+            elif row_name == 'FLEX':
+                tooltip = data.get('tooltip_flex', '')
+            elif row_name == 'Total HC':
+                tooltip = f"Total: {value} = {data.get('FTE', 0)} FTE + {data.get('TEMP', 0)} TEMP + {data.get('NEW HIRES', 0)} New + {data.get('FLEX', 0)} Flex"
+            
+            # Create detailed tooltip content
+            parts = shift_key.split(' ')
+            date = parts[0]
+            day = parts[1]
+            shift_num = parts[-1].split(' ')[-1]
+            
+            tooltip_content = ""
+            
+            if tooltip:
+                tooltip_content = tooltip.replace('\n', '<br>')
+            else:
+                tooltip_content = f"{value}"
+            
+
+
+
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                fte_val = data.get('FTE', 0)
+                temp_val = data.get('TEMP', 0) 
+                nh_val = data.get('NEW HIRES', 0)
+                flex_val = data.get('FLEX', 0)
+
+
+
+            
+            html_content += f"""<td class='data-cell'>
+                {value}
+                <span class='tooltip-text'>{tooltip_content}</span>
+            </td>"""
+        
+        html_content += "</tr>"
+    
+    html_content += "</table>"
+    
+    return html_content
+
+def create_shift_summary_html_table_with_tooltips(filtered_shift_data):
+    """Create HTML table with tooltips for shift summary data - transposed structure"""
+    
+    tooltip_css = """
+    <style>
+    .shift-table {
+        width: 100%; 
+        border-collapse: collapse; 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 12px;
+        margin: 10px 0;
+    }
+    .shift-table th {
+        background-color: #f1f1f1; 
+        color: #2E4057; 
+        font-weight: bold; 
+        padding: 8px; 
+        text-align: center; 
+        border: 1px solid #ddd;
+        font-size: 11px;
+    }
+    .shift-table td {
+        padding: 6px 8px; 
+        text-align: center; 
+        border: 1px solid #ddd; 
+        position: relative;
+        cursor: help;
+    }
+    .shift-table td.row-header {
+        background-color: #f9f9f9; 
+        font-weight: bold;
+        text-align: left;
+        cursor: default;
+    }
+    .shift-table td.data-cell:hover {
+        background-color: #e3f2fd !important;
+    }
+    .shift-table .tooltip-text {
+        visibility: hidden;
+        width: 280px;
+        background-color: #333;
+        color: #fff;
+        text-align: left;
+        border-radius: 6px;
+        padding: 10px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -140px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 11px;
+        line-height: 1.4;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .shift-table .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+    }
+    .shift-table td:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+    </style>
+    """
+    
+    # Prepare the transposed structure - metrics as rows, shifts as columns
+    columns = list(filtered_shift_data.keys())
+    rows = ['Total Needed', 'Total Expected', 'Total Gap', 'Total Attendance Assumption', 'Total Punches']
+    
+    # Build HTML table
+    html_content = tooltip_css
+    html_content += "<table class='shift-table'>"
+    
+    # Header row - empty cell + shift columns
+    html_content += "<tr><th></th>"
+    for shift_key in sorted(columns):
+        parts = shift_key.split(' ')
+        date = parts[0]
+        day = parts[1]
+        shift_num = parts[-1].split(' ')[-1]
+        html_content += f"<th>{date} {day}<br>Shift {shift_num}</th>"
+    html_content += "</tr>"
+    
+    # Data rows - each metric as a row
+    for row_name in rows:
+        html_content += "<tr>"
+        html_content += f"<td class='row-header'>{row_name}</td>"
+        
+        for shift_key in sorted(columns):
+            data = filtered_shift_data[shift_key]
+            value = data[row_name]
+            
+            # Get appropriate tooltip
+            tooltip = ""
+            if row_name == 'Total Needed':
+                tooltip = data.get('tooltip_needed', '')
+            elif row_name == 'Total Expected':
+                tooltip = data.get('tooltip_expected', '')
+            elif row_name == 'Total Gap':
+                tooltip = data.get('tooltip_gap', '')
+            elif row_name == 'Total Attendance Assumption':
+                tooltip = data.get('tooltip_attendance', '')
+            elif row_name == 'Total Punches':
+                tooltip = data.get('tooltip_punches', '')
+            
+            # Create detailed tooltip content
+            parts = shift_key.split(' ')
+            date = parts[0]
+            day = parts[1]
+            shift_num = parts[-1].split(' ')[-1]
+            
+            tooltip_content = ""
+            
+            if tooltip:
+                tooltip_content = tooltip.replace('\n', '<br>')
+            else:
+                tooltip_content = f"{value}"
+            
+
+
+                gap_val = int(value) if str(value).replace('-', '').isdigit() else 0
+
+                if gap_val > 0:
+                    pass
+                elif gap_val < 0:
+                    pass
+                else:
+                    pass
+            # Add color coding for gap values
+            cell_class = "data-cell"
+            if row_name == 'Total Gap':
+                try:
+                    gap_val = int(value) if str(value).replace('-', '').isdigit() else 0
+                    if gap_val < 0:
+                        cell_class += " gap-negative"
+                    elif gap_val > 0:
+                        cell_class += " gap-positive"
+                except:
+                    pass
+            
+            html_content += f"""<td class='{cell_class}'>
+                {value}
+                <span class='tooltip-text'>{tooltip_content}</span>
+            </td>"""
+        
+        html_content += "</tr>"
+    
+    html_content += "</table>"
+    
+    return html_content
+
+def create_html_table_with_tooltips(data_dict, rows, table_title, tooltip_mapping=None):
+    """Create HTML table with hover tooltips instead of Plotly table"""
+    
+    columns = list(data_dict.keys())
+    
+    # CSS for hover tooltips
+    tooltip_css = """
+    <style>
+    .tooltip-table {
+        width: 100%; 
+        border-collapse: collapse; 
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 12px;
+        margin: 10px 0;
+    }
+    .tooltip-table th {
+        background-color: #f1f1f1; 
+        color: #2E4057; 
+        font-weight: bold; 
+        padding: 8px; 
+        text-align: center; 
+        border: 1px solid #ddd;
+        font-size: 10px;
+    }
+    .tooltip-table td {
+        padding: 6px 8px; 
+        text-align: center; 
+        border: 1px solid #ddd; 
+        position: relative;
+        cursor: help;
+    }
+    .tooltip-table td.row-header {
+        background-color: #f9f9f9; 
+        font-weight: bold;
+        cursor: default;
+    }
+    .tooltip-table td:not(.row-header):hover {
+        background-color: #e3f2fd !important;
+    }
+    .tooltip-table .tooltip-text {
+        visibility: hidden;
+        width: 250px;
+        background-color: #333;
+        color: #fff;
+        text-align: left;
+        border-radius: 6px;
+        padding: 8px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -125px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 11px;
+        line-height: 1.4;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .tooltip-table .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #333 transparent transparent transparent;
+    }
+    .tooltip-table td:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+    </style>
+    """
+    
+    # Build HTML table
+    html_content = tooltip_css
+    html_content += f"<div style='margin: 20px 0;'><strong>{table_title}</strong></div>"
+    html_content += "<table class='tooltip-table'>"
+    
+    # Header row
+    html_content += "<tr><th>Date & Shift</th>"
+    for col in columns:
+        html_content += f"<th>{col}</th>"
+    html_content += "</tr>"
+    
+    # Data rows
+    for row in rows:
+        html_content += "<tr>"
+        html_content += f"<td class='row-header'>{row}</td>"
+        
+        for col in columns:
+            value = data_dict[col].get(row, '')
+            tooltip_text = ""
+            
+            # Get tooltip text based on mapping
+            if tooltip_mapping and col in data_dict:
+                tooltip_key = tooltip_mapping.get(row, '')
+                if tooltip_key and tooltip_key in data_dict[col]:
+                    tooltip_text = data_dict[col][tooltip_key].replace('\n', '<br>')
+            
+            if tooltip_text:
+                html_content += f"""<td>
+                    {value}
+                    <span class='tooltip-text'>{tooltip_text}</span>
+                </td>"""
+            else:
+                html_content += f"<td class='row-header'>{value}</td>"
+        
+        html_content += "</tr>"
+    
+    html_content += "</table>"
+    
+    return html_content
+
+def render_metric_with_tooltip(metric_name: str, tooltip_text: str):
+    """Render metric label with tooltip using details/summary HTML elements"""
+    st.markdown(
+        """
+        <style>
+          .metric-tooltip { display:inline-block; margin-left:6px; }
+          .metric-tooltip summary {
+            list-style:none; cursor:pointer; user-select:none; display:inline-flex;
+            align-items:center; justify-content:center; width:16px; height:16px;
+            border-radius:50%; border:1px solid rgba(0,0,0,0.18); color:#6b7280; font-size:11px;
+            background-color:#f9f9f9;
+          }
+          .metric-tooltip summary:hover {
+            background-color:#e5e7eb; border-color:#374151;
+          }
+          .metric-tooltip summary::-webkit-details-marker { display:none; }
+          .metric-tooltip .tooltip-card {
+            position: absolute; z-index: 1000; margin-top:6px; background:#fff; 
+            border:1px solid rgba(0,0,0,0.1); box-shadow:0 4px 12px rgba(0,0,0,0.1); 
+            border-radius:6px; padding:10px 12px; font-size:0.875rem; color:#374151; 
+            max-width:280px; line-height:1.4;
+          }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    
+    # Sanitize inputs
+    safe_metric = metric_name.replace("<","&lt;").replace(">","&gt;")
+    safe_tooltip = tooltip_text.replace("<","&lt;").replace(">","&gt;")
+    
+    st.markdown(
+        f"""
+        <div class="metric-label">
+          {safe_metric}
+          <details class='metric-tooltip'>
+            <summary aria-label='More information'>i</summary>
+            <div class='tooltip-card'>{safe_tooltip}</div>
+          </details>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+def should_show_alert(gap, gap_percentage):
+    """Determine if critical staffing alert should be shown"""
+    return gap > 0 and abs(gap_percentage) >= 15  # Show alert if understaffed by 15% or more
+
+def generate_dynamic_table_data(location, department, week, selected_dates, shifts):
+    """Generate dynamic table data based on all filter selections"""
+    
+    # Base multipliers by location (similar to Overview section)
+    location_multipliers = {
+        "AZ Goodyear": 1.0,
+        "IL Aurora": 0.85, 
+        "AZ Phoenix": 1.2,
+        "IL Lake Zurich": 0.9,
+        "IL Burr Ridge": 0.75
+    }
+    
+    # Department multipliers
+    dept_multipliers = {
+        "Kitchen": 1.0,
+        "Production": 0.8,
+        "Sanitation": 0.6,
+        "Quality": 0.4,
+        "Warehouse": 0.9,
+        "Fulfillment": 0.7,
+        "Shipping": 0.5
+    }
+    
+    # Week variations
+    week_variations = {
+        "2026-W08": 1.0,
+        "2026-W07": 0.95,
+        "2026-W09": 1.05,
+        "2026-W06": 0.9,
+        "2026-W10": 1.1
+    }
+    
+    # Get multipliers
+    loc_mult = location_multipliers.get(location, 1.0)
+    dept_mult = dept_multipliers.get(department, 1.0)
+    week_mult = week_variations.get(week, 1.0)
+    
+    # Shift multipliers - different staffing levels per shift
+    shift_multipliers = {
+        "1st": 1.2,   # Morning shift - typically needs more staff
+        "2nd": 1.0,   # Afternoon shift - standard staffing
+        "3rd": 0.7    # Night shift - typically needs less staff
+    }
+    
+    # Base template data - will be modified by multipliers
+    base_shift_template = {
+        'Total Needed': 91,
+        'Total Expected': 79,
+        'Total Gap': -12,
+        'Total Attendance Assumption': '89%',
+        'Total Punches': 106,
+        'tooltip_needed': 'â€¢ FTE: 35\nâ€¢ TEMP: 35\nâ€¢ WW: 20\nâ€¢ FLEX: 0',
+        'tooltip_expected': '+3% vs prev week',
+        'tooltip_gap': '+3% vs prev week',
+        'tooltip_attendance': '+3% vs prev week',
+        'tooltip_punches': '+3% vs prev week'
+    }
+    
+    base_hc_template = {
+        'FTE': 48,
+        'TEMP': 30,
+        'NEW HIRES': 0,
+        'FLEX': 1,
+        'WW/GS': 0,
+        'VEH/MEH': 2,
+        'PTO': 1,
+        'tooltip_fte': '+15 vs prev week',
+        'tooltip_temp': '+3% vs prev week'
+    }
+    
+    base_attendance_template = {
+        'FTE Attendance Assumption': '90%',
+        'TEMP Attendance Assumption': '84%',
+        'NEW HIRES Show Up Rate': '50%',
+        'FLEX Show Up Rate': '50%',
+        'WW/GS Show Up Rate': '100.00%',
+        'VEH Show Up Rate': '80.00%',
+        'PTO Rate': '50%',
+        'tooltip_fte': '+15% vs prev week',
+        'tooltip_temp': '+3% vs prev week'
+    }
+    
+    # Generate dynamic data for each selected date and shift
+    dynamic_shift_data = {}
+    dynamic_hc_data = {}
+    dynamic_attendance_data = {}
+    
+    for selected_date in selected_dates:
+        date_str = selected_date.strftime("%Y-%m-%d")
+        day_str = selected_date.strftime("%a")
+        
+        for shift in shifts:
+            shift_num = shift[0]  # Convert "1st" to "1"
+            key = f"{date_str} {day_str} Shift {shift_num}"
+            
+            # Get shift multiplier
+            shift_mult = shift_multipliers.get(shift, 1.0)
+            
+            # Apply multipliers to shift data
+            shift_data = base_shift_template.copy()
+            shift_data['Total Needed'] = int(shift_data['Total Needed'] * loc_mult * dept_mult * week_mult * shift_mult)
+            shift_data['Total Expected'] = int(shift_data['Total Expected'] * loc_mult * dept_mult * week_mult * shift_mult)
+            shift_data['Total Gap'] = shift_data['Total Expected'] - shift_data['Total Needed']
+            shift_data['Total Punches'] = int(shift_data['Total Punches'] * loc_mult * dept_mult * week_mult * shift_mult)
+            
+            # Add shift data to dictionary
+            dynamic_shift_data[key] = shift_data
+            
+            # Apply multipliers to HC data
+            hc_data = base_hc_template.copy()
+            hc_data['FTE'] = int(hc_data['FTE'] * loc_mult * dept_mult * week_mult * shift_mult)
+            hc_data['TEMP'] = int(hc_data['TEMP'] * loc_mult * dept_mult * week_mult * shift_mult)
+            hc_data['FLEX'] = int(hc_data['FLEX'] * loc_mult * dept_mult * week_mult * shift_mult)
+            
+            dynamic_hc_data[key] = hc_data
+            
+            # Attendance data (percentages don't change much, but can vary slightly)
+            attendance_data = base_attendance_template.copy()
+            dynamic_attendance_data[key] = attendance_data
+    
+    return dynamic_shift_data, dynamic_hc_data, dynamic_attendance_data
+
+def create_combined_hc_attendance_aggrid_table(filtered_hc_data, filtered_attendance_data, expected_hc_total):
+    """Create combined HC and Attendance Assumption table using AG-Grid with inline editing for hedge row
+    
+    Returns:
+        df: DataFrame for AG-Grid
+        gridOptions: Grid configuration
+        custom_css: Custom styling
+        grid_height: Height of grid
+        actual_total: Actual calculated total Expected HC from the table
+    """
+    
+    # Calculate actual punches from employee data
+    # Since sample employee_data is limited, calculate punches as % of Expected HC with realistic variance
+    def calculate_punch_totals_from_expected(filtered_hc_data, filtered_attendance_data):
+        """Calculate actual punch counts based on Expected HC with realistic ±1-3% variance"""
+        import random
+        random.seed(42)  # Consistent results
+        
+        punch_data = {}
+        
+        # Variance rates: slight over/under attendance relative to expectation
+        variance_rates = {
+            'FTE': 1.01,          # 1% over expected
+            'TEMP': 0.98,         # 2% under expected
+            'NEW HIRES': 0.96,    # 4% under expected
+            'FLEX': 1.02,         # 2% over expected
+            'WW/GS': 0.99,        # 1% under expected
+            'VEH/MEH': 1.00,      # Exactly at expected
+            'PTO': 1.00           # Exactly at expected (should be negative anyway)
+        }
+        
+        for shift_key in filtered_hc_data.keys():
+            shift_punches = {}
+            hc_data = filtered_hc_data.get(shift_key, {})
+            attendance_data = filtered_attendance_data.get(shift_key, {})
+            
+            # Get hedge for this shift
+            parts = shift_key.split(' ')
+            date_str = parts[0]
+            shift_num = parts[-1]
+            hedge_key = f"{date_str}_{shift_num}st"
+            hedge_rate = st.session_state.hedge_rates.get(hedge_key, 0.0)
+            try:
+                hedge_rate = float(hedge_rate)
+            except (ValueError, TypeError):
+                hedge_rate = 0.0
+            
+            # Calculate punches for each employee type
+            for emp_type, data_key in [('FTE', 'FTE'), ('TEMP', 'TEMP'), ('NEW HIRES', 'NEW HIRES'), 
+                                       ('FLEX', 'FLEX'), ('WW/GS', 'WW/GS'), ('VEH/MEH', 'VEH/MEH'), ('PTO', 'PTO')]:
+                roster_hc = hc_data.get(data_key, 0)
+                
+                # Get attendance
+                att_keys = {
+                    'FTE': 'FTE Attendance Assumption',
+                    'TEMP': 'TEMP Attendance Assumption',
+                    'NEW HIRES': 'NEW HIRES Show Up Rate',
+                    'FLEX': 'FLEX Show Up Rate',
+                    'WW/GS': 'WW/GS Show Up Rate',
+                    'VEH/MEH': 'VEH Show Up Rate',
+                    'PTO': 'PTO Rate'
+                }
+                attendance_str = attendance_data.get(att_keys.get(emp_type, f'{emp_type} Attendance Assumption'), '0%')
+                attendance_pct = float(attendance_str.rstrip('%')) / 100.0 if attendance_str != 'N/A' else 0
+                
+                # Apply hedge for FTE and TEMP
+                if emp_type in ['FTE', 'TEMP']:
+                    hedged_attendance_pct = attendance_pct + (hedge_rate / 100.0)
+                    hedged_attendance_pct = max(0, min(1, hedged_attendance_pct))
+                else:
+                    hedged_attendance_pct = attendance_pct
+                
+                # Calculate expected HC
+                expected_hc = roster_hc * hedged_attendance_pct
+                
+                # Calculate actual punches with variance
+                variance_rate = variance_rates.get(emp_type, 1.00)
+                actual_punches = round(expected_hc * variance_rate)
+                
+                shift_punches[data_key] = actual_punches
+            
+            punch_data[shift_key] = shift_punches
+        
+        return punch_data
+    
+    punch_totals = calculate_punch_totals_from_expected(filtered_hc_data, filtered_attendance_data)
+
+    
+    # Employee types in order
+    employee_types = [
+        'FTE',
+        'TEMP', 
+        'NEW HIRES',
+        'Day Labor (Flex)',
+        'Day Labor (WW/GS)',
+        'Overtime (VEH/MEH)',
+        'Time Off (VER/MTO)',
+        'Hedge Attendance Rate (+/-) ✏️',
+        'Total Expected HC'
+    ]
+    
+    # Mapping to data keys
+    data_key_mapping = {
+        'FTE': 'FTE',
+        'TEMP': 'TEMP',
+        'NEW HIRES': 'NEW HIRES',
+        'Day Labor (Flex)': 'FLEX',
+        'Day Labor (WW/GS)': 'WW/GS',
+        'Overtime (VEH/MEH)': 'VEH/MEH',
+        'Time Off (VER/MTO)': 'PTO'
+    }
+    
+    attendance_key_mapping = {
+        'FTE': 'FTE Attendance Assumption',
+        'TEMP': 'TEMP Attendance Assumption',
+        'NEW HIRES': 'NEW HIRES Show Up Rate',
+        'Day Labor (Flex)': 'FLEX Show Up Rate',
+        'Day Labor (WW/GS)': 'WW/GS Show Up Rate',
+        'Overtime (VEH/MEH)': 'VEH Show Up Rate',
+        'Time Off (VER/MTO)': 'PTO Rate'
+    }
+    
+    columns_list = sorted(list(filtered_hc_data.keys()))
+    
+    # Build dataframe
+    table_data = {'Employee Type': []}
+    
+    # Initialize columns for each shift - now with 5 columns: Roster, Attendance, Expected, Punches, Variance
+    for idx, shift_key in enumerate(columns_list):
+        parts = shift_key.split(' ')
+        date_str = parts[0]
+        shift_num = parts[-1]
+        
+        col_prefix = f'S{idx+1}'
+        table_data[f'{col_prefix}_Roster'] = []  # Renamed from Scheduled
+        table_data[f'{col_prefix}_Attendance'] = []
+        table_data[f'{col_prefix}_Expected'] = []
+        table_data[f'{col_prefix}_Punches'] = []  # NEW: Actual punches
+        table_data[f'{col_prefix}_Punch_Variance'] = []  # NEW: Variance from expected
+        table_data[f'{col_prefix}_Variance'] = []  # WoW variance for tooltip coloring
+        table_data[f'{col_prefix}_Tooltip'] = []
+        table_data[f'{col_prefix}_Attendance_Tooltip'] = []
+        # Enhanced tooltip data columns
+        table_data[f'{col_prefix}_Current_HC'] = []
+        table_data[f'{col_prefix}_Previous_HC'] = []
+        table_data[f'{col_prefix}_Absolute_Change'] = []
+        table_data[f'{col_prefix}_Cohort_Breakdown'] = []
+    
+    # Populate data rows
+    for emp_type in employee_types:
+        if emp_type == 'Hedge Attendance Rate (+/-) ✏️':
+            # Hedge row
+            table_data['Employee Type'].append(emp_type)
+            for idx, shift_key in enumerate(columns_list):
+                parts = shift_key.split(' ')
+                date_str = parts[0]
+                shift_num = parts[-1]
+                hedge_key = f"{date_str}_{shift_num}st"
+                hedge_rate = st.session_state.hedge_rates.get(hedge_key, 0.0)
+                
+                # Ensure hedge_rate is numeric
+                try:
+                    hedge_rate = float(hedge_rate)
+                except (ValueError, TypeError):
+                    hedge_rate = 0.0
+                
+                col_prefix = f'S{idx+1}'
+                table_data[f'{col_prefix}_Roster'].append(hedge_rate)
+                table_data[f'{col_prefix}_Attendance'].append('')
+                table_data[f'{col_prefix}_Expected'].append('')  # Empty for hedge row
+                table_data[f'{col_prefix}_Punches'].append('')  # Empty for hedge row
+                table_data[f'{col_prefix}_Punch_Variance'].append('')  # Empty for hedge row
+                table_data[f'{col_prefix}_Variance'].append(None)
+                table_data[f'{col_prefix}_Tooltip'].append('')
+                table_data[f'{col_prefix}_Attendance_Tooltip'].append('')
+                # Enhanced tooltip data (empty for hedge row)
+                table_data[f'{col_prefix}_Current_HC'].append(0)
+                table_data[f'{col_prefix}_Previous_HC'].append(0)
+                table_data[f'{col_prefix}_Absolute_Change'].append(0)
+                table_data[f'{col_prefix}_Cohort_Breakdown'].append('{}')
+                
+        elif emp_type == 'Total Expected HC':
+            # Total row - will be calculated from Expected HC column after dataframe is built
+            table_data['Employee Type'].append(emp_type)
+            for idx, shift_key in enumerate(columns_list):
+                col_prefix = f'S{idx+1}'
+                # Placeholder - will be calculated later
+                table_data[f'{col_prefix}_Roster'].append('')  # Empty for total row
+                table_data[f'{col_prefix}_Attendance'].append('')  # Empty for total row
+                table_data[f'{col_prefix}_Expected'].append(0)  # Will be summed later
+                table_data[f'{col_prefix}_Punches'].append(0)  # Will be summed later
+                table_data[f'{col_prefix}_Punch_Variance'].append(0)  # Will be calculated later
+                table_data[f'{col_prefix}_Variance'].append(None)
+                table_data[f'{col_prefix}_Tooltip'].append('')
+                table_data[f'{col_prefix}_Attendance_Tooltip'].append('')
+                # Enhanced tooltip data (empty for total row)
+                table_data[f'{col_prefix}_Current_HC'].append(0)
+                table_data[f'{col_prefix}_Previous_HC'].append(0)
+                table_data[f'{col_prefix}_Absolute_Change'].append(0)
+                table_data[f'{col_prefix}_Cohort_Breakdown'].append('{}')
+        else:
+            # Regular employee type row
+            table_data['Employee Type'].append(emp_type)
+            data_key = data_key_mapping.get(emp_type, emp_type)
+            att_key = attendance_key_mapping.get(emp_type, f'{emp_type} Attendance Assumption')
+            
+            for idx, shift_key in enumerate(columns_list):
+                hc_data = filtered_hc_data.get(shift_key, {})
+                attendance_data = filtered_attendance_data.get(shift_key, {})
+                
+                hc_value = hc_data.get(data_key, 0)
+                attendance_value = attendance_data.get(att_key, 'N/A')
+                tooltip_hc = hc_data.get(f'tooltip_{data_key.lower()}', '+3% vs prev week')
+                tooltip_att = attendance_data.get(f'tooltip_{data_key.lower()}', '+3% vs prev week')
+                
+                # Extract variance percentage
+                variance = None
+                import re
+                match = re.search(r'([+-]?\d+)%?\s*vs\s*prev\s*week', tooltip_hc)
+                if match:
+                    variance = float(match.group(1))
+                
+                # Calculate previous week HC and cohort breakdown for enhanced tooltips
+                current_hc = hc_value
+                if variance is not None:
+                    # Calculate previous HC from variance percentage
+                    previous_hc = round(current_hc / (1 + variance/100))
+                    absolute_change = current_hc - previous_hc
+                    
+                    # Generate realistic demographic cohort breakdown
+                    # Distribute the change across demographic cohorts realistically
+                    cohort_breakdown = {}
+                    if absolute_change != 0:
+                        import random
+                        random.seed(hash(f"{emp_type}_{shift_key}"))  # Consistent randomization
+                        
+                        # Internal cohort codes
+                        cohorts = ['Cohort A', 'Cohort B', 'Cohort C', 'Cohort D']
+                        
+                        # Generate proportions that sum to absolute_change
+                        remaining = absolute_change
+                        for i, cohort in enumerate(cohorts[:-1]):
+                            # Allocate 20-40% of remaining to this cohort
+                            proportion = random.uniform(0.2, 0.4)
+                            cohort_value = round(remaining * proportion)
+                            cohort_breakdown[cohort] = cohort_value
+                            remaining -= cohort_value
+                        
+                        # Last cohort gets remainder
+                        cohort_breakdown[cohorts[-1]] = remaining
+                        
+                        # Remove cohorts with 0 change
+                        cohort_breakdown = {k: v for k, v in cohort_breakdown.items() if v != 0}
+                else:
+                    previous_hc = current_hc
+                    absolute_change = 0
+                    cohort_breakdown = {}
+                
+                # Get hedge rate for this shift to modify attendance
+                parts_hedge = shift_key.split(' ')
+                date_str_hedge = parts_hedge[0]
+                shift_num_hedge = parts_hedge[-1]
+                hedge_key = f"{date_str_hedge}_{shift_num_hedge}st"
+                hedge_rate = st.session_state.hedge_rates.get(hedge_key, 0.0)
+                
+                # Ensure hedge_rate is numeric
+                try:
+                    hedge_rate = float(hedge_rate)
+                except (ValueError, TypeError):
+                    hedge_rate = 0.0
+                
+                # Parse attendance percentage
+                attendance_pct = float(attendance_value.rstrip('%')) / 100.0 if attendance_value != 'N/A' else 0
+                
+                # Apply hedge to attendance for FTE and TEMP
+                if emp_type in ['FTE', 'TEMP']:
+                    hedged_attendance_pct = attendance_pct + (hedge_rate / 100.0)
+                    hedged_attendance_pct = max(0, min(1, hedged_attendance_pct))  # Clamp between 0 and 1
+                    # Display the modified attendance percentage
+                    modified_attendance_value = f"{round(hedged_attendance_pct * 100)}%"
+                else:
+                    hedged_attendance_pct = attendance_pct
+                    modified_attendance_value = attendance_value
+                
+                col_prefix = f'S{idx+1}'
+                table_data[f'{col_prefix}_Roster'].append(hc_value)  # Renamed from Scheduled
+                table_data[f'{col_prefix}_Attendance'].append(modified_attendance_value)  # Show modified attendance
+                table_data[f'{col_prefix}_Variance'].append(variance)
+                table_data[f'{col_prefix}_Tooltip'].append(tooltip_hc)
+                table_data[f'{col_prefix}_Attendance_Tooltip'].append(tooltip_att)
+                
+                # Add enhanced tooltip data
+                table_data[f'{col_prefix}_Current_HC'].append(current_hc)
+                table_data[f'{col_prefix}_Previous_HC'].append(previous_hc)
+                table_data[f'{col_prefix}_Absolute_Change'].append(absolute_change)
+                
+                # Store cohort breakdown as JSON string
+                import json
+                table_data[f'{col_prefix}_Cohort_Breakdown'].append(json.dumps(cohort_breakdown))
+                
+                # Calculate Expected HC = Roster × Modified Attendance
+                expected_hc = round(hc_value * hedged_attendance_pct)
+                table_data[f'{col_prefix}_Expected'].append(expected_hc)
+                
+                # Add actual punch data
+                punch_count = punch_totals.get(shift_key, {}).get(data_key, 0)
+                table_data[f'{col_prefix}_Punches'].append(punch_count)
+                
+                # Calculate punch variance (Actual - Expected)
+                punch_variance = punch_count - expected_hc
+                table_data[f'{col_prefix}_Punch_Variance'].append(punch_variance)
+    
+    df = pd.DataFrame(table_data)
+    
+    # Calculate Total Expected HC row by summing Expected HC, Punches, and Punch_Variance columns
+    total_row_idx = df[df['Employee Type'] == 'Total Expected HC'].index
+    if len(total_row_idx) > 0:
+        total_idx = total_row_idx[0]
+        # Sum all values for non-total, non-hedge rows
+        for idx, shift_key in enumerate(columns_list):
+            col_prefix = f'S{idx+1}'
+            expected_col = f'{col_prefix}_Expected'
+            punches_col = f'{col_prefix}_Punches'
+            variance_col = f'{col_prefix}_Punch_Variance'
+            
+            # Sum expected HC for all employee types (exclude hedge and total rows)
+            employee_rows = df[(df['Employee Type'] != 'Total Expected HC') & 
+                              (~df['Employee Type'].str.contains('Hedge Attendance Rate', na=False))]
+            total_expected = employee_rows[expected_col].sum()
+            total_punches = employee_rows[punches_col].sum()
+            
+            df.at[total_idx, expected_col] = round(total_expected)
+            df.at[total_idx, punches_col] = int(total_punches)
+            df.at[total_idx, variance_col] = int(total_punches - total_expected)
+    
+    # JavaScript functions for AG-Grid
+    row_style_jscode = JsCode("""
+    function(params) {
+        if (params.data['Employee Type'].includes('Hedge Attendance Rate')) {
+            return {'background-color': '#fffbea'};
+        }
+        if (params.data['Employee Type'] === 'Total Expected HC') {
+            return {'background-color': '#e8f4f8', 'font-weight': '500'};
+        }
+        return null;
+    }
+    """)
+    
+    first_col_style_jscode = JsCode("""
+    function(params) {
+        var style = {
+            'background-color': '#fafafa',
+            'text-align': 'left',
+            'padding-left': '12px',
+            'font-size': '11px'
+        };
+        
+        // Add hyperlink styling for specific rows
+        var empType = params.data['Employee Type'];
+        if (empType === 'Overtime (VEH/MEH)' || empType === 'Day Labor (WW/GS)') {
+            style['color'] = '#2E4057';
+            style['text-decoration'] = 'underline';
+            style['text-decoration-style'] = 'dashed';
+            style['cursor'] = 'pointer';
+        }
+        
+        return style;
+    }
+    """)
+    
+    scheduled_cell_style_jscode = JsCode("""
+    function(params) {
+        var field = params.colDef.field;
+        var variance = null;
+        
+        // Get variance for this shift (only for Roster column)
+        if (field === 'S1_Roster') {
+            variance = params.data['S1_Variance'];
+        } else if (field === 'S2_Roster') {
+            variance = params.data['S2_Variance'];
+        } else if (field === 'S3_Roster') {
+            variance = params.data['S3_Variance'];
+        }
+        
+        var style = {
+            'text-align': 'center',
+            'font-size': '11px'
+        };
+        
+        // Apply HIGH CONTRAST variance colors - only Critical and High
+        if (variance !== null && variance !== undefined && !isNaN(variance)) {
+            var absVariance = Math.abs(variance);
+            if (absVariance > 20) {
+                style['background-color'] = '#ff4444';  // Critical - bright red
+                style['color'] = '#ffffff';  // White text for contrast
+                style['font-weight'] = '600';
+            } else if (absVariance >= 10) {
+                style['background-color'] = '#ff9933';  // High - bright orange
+                style['color'] = '#ffffff';  // White text for contrast
+                style['font-weight'] = '600';
+            }
+        }
+        
+        return style;
+    }
+    """)
+    
+    data_cell_style_jscode = JsCode("""
+    function(params) {
+        return {
+            'text-align': 'center',
+            'font-size': '11px'
+        };
+    }
+    """)
+    
+    col_span_jscode = JsCode("""
+    function(params) {
+        var employeeType = params.data['Employee Type'];
+        var field = params.colDef.field;
+        
+        if (employeeType.includes('Hedge Attendance Rate')) {
+            // Hedge row: merge all 3 columns
+            if (field.includes('_Roster')) {
+                return 3;
+            }
+            if (field.includes('_Attendance') || field.includes('_Expected')) {
+                return 1;
+            }
+        }
+        
+        if (employeeType === 'Total Expected HC') {
+            // Total row: merge Roster and Attendance, show Expected separately
+            if (field.includes('_Roster')) {
+                return 2;  // Only merge Roster + Attendance
+            }
+            if (field.includes('_Attendance')) {
+                return 1;  // Skip (covered by Roster merge)
+            }
+            if (field.includes('_Expected')) {
+                return 1;  // Show Expected separately
+            }
+        }
+        return 1;
+    }
+    """)
+    
+    cell_editable_jscode = JsCode("""
+    function(params) {
+        var employeeType = params.data['Employee Type'];
+        var field = params.colDef.field;
+        
+        if (employeeType.includes('Hedge Attendance Rate')) {
+            if (field.includes('_Roster')) {
+                return true;
+            }
+        }
+        return false;
+    }
+    """)
+    
+    value_formatter_jscode = JsCode("""
+    function(params) {
+        var employeeType = params.data['Employee Type'];
+        var field = params.colDef.field;
+        
+        if (employeeType.includes('Hedge Attendance Rate')) {
+            if (params.value === '' || params.value === null || params.value === undefined) {
+                return '';
+            }
+            var val = params.value;
+            if (val > 0) {
+                return '+' + val + '%';
+            } else if (val === 0) {
+                return '0%';
+            } else {
+                return val + '%';
+            }
+        }
+        
+        // For Total Expected HC row, show "Total" in merged Roster cell
+        if (employeeType === 'Total Expected HC' && field.includes('_Roster')) {
+            return 'Total';
+        }
+        
+        return params.value;
+    }
+    """)
+    
+    value_parser_jscode = JsCode("""
+    function(params) {
+        if (params.newValue === null || params.newValue === undefined || params.newValue === '') {
+            return 0;
+        }
+        var cleaned = String(params.newValue).replace(/[%+\s]/g, '');
+        var num = parseFloat(cleaned);
+        return isNaN(num) ? 0 : num;
+    }
+    """)
+    
+    tooltip_value_getter = JsCode("""
+    function(params) {
+        var field = params.colDef.field;
+        var shiftNum = '';
+        
+        if (field === 'S1_Roster') {
+            shiftNum = 'S1';
+        } else if (field === 'S2_Roster') {
+            shiftNum = 'S2';
+        } else if (field === 'S3_Roster') {
+            shiftNum = 'S3';
+        } else {
+            return '';
+        }
+        
+        var absolute = params.data[shiftNum + '_Absolute_Change'];
+        var cohortJson = params.data[shiftNum + '_Cohort_Breakdown'];
+        
+        // If no variance data, return empty
+        if (absolute === null || absolute === undefined || absolute === 0) {
+            return '';
+        }
+        
+        // Parse cohort breakdown into compact format
+        var cohortParts = [];
+        try {
+            var cohortData = JSON.parse(cohortJson || '{}');
+            if (Object.keys(cohortData).length > 0) {
+                for (var key in cohortData) {
+                    var val = cohortData[key];
+                    if (val !== 0) {
+                        // Use short format: "A:+2" instead of "Cohort A: +2"
+                        var shortName = key.replace('Cohort ', '');
+                        cohortParts.push(shortName + ':' + (val > 0 ? '+' : '') + val);
+                    }
+                }
+            }
+        } catch (e) {
+            cohortParts = [];
+        }
+        
+        // Build compact single-line tooltip
+        var sign = absolute > 0 ? '+' : '';
+        
+        var result = sign + absolute + ' HC vs last week';
+        
+        if (cohortParts.length > 0) {
+            result += ' (' + cohortParts.join(', ') + ')';
+        }
+        
+        return result;
+    }
+    """)
+    
+    attendance_tooltip_value_getter = JsCode("""
+    function(params) {
+        var field = params.colDef.field;
+        
+        if (field === 'S1_Attendance') {
+            return params.data['S1_Attendance_Tooltip'] || '';
+        } else if (field === 'S2_Attendance') {
+            return params.data['S2_Attendance_Tooltip'] || '';
+        } else if (field === 'S3_Attendance') {
+            return params.data['S3_Attendance_Tooltip'] || '';
+        }
+        
+        return '';
+    }
+    """)
+    
+    expected_tooltip_value_getter = JsCode("""
+    function(params) {
+        var field = params.colDef.field;
+        var shiftNum = '';
+        
+        if (field === 'S1_Expected') {
+            shiftNum = 'S1';
+        } else if (field === 'S2_Expected') {
+            shiftNum = 'S2';
+        } else if (field === 'S3_Expected') {
+            shiftNum = 'S3';
+        } else {
+            return '';
+        }
+        
+        var employeeType = params.data['Employee Type'];
+        
+        // Skip tooltip for hedge and total rows
+        if (employeeType.includes('Hedge Attendance Rate') || employeeType === 'Total Expected HC') {
+            return '';
+        }
+        
+        var roster = params.data[shiftNum + '_Roster'];
+        var attendance = params.data[shiftNum + '_Attendance'];
+        var expected = params.data[shiftNum + '_Expected'];
+        
+        if (roster === null || roster === undefined || roster === '' || 
+            attendance === null || attendance === undefined || attendance === '') {
+            return '';
+        }
+        
+        // Build calculation tooltip
+        return 'Calculated: ' + roster + ' × ' + attendance + ' = ' + expected + ' HC';
+    }
+    """)
+    
+    # Build grid options
+    gb = GridOptionsBuilder.from_dataframe(df)
+    
+    gb.configure_default_column(
+        resizable=False,
+        sortable=False,
+        filter=False
+    )
+    
+    gb.configure_grid_options(
+        enableRangeSelection=False,
+        rowHeight=35,
+        headerHeight=45,
+        suppressMovableColumns=True,
+        getRowStyle=row_style_jscode,
+        singleClickEdit=True,
+        stopEditingWhenCellsLoseFocus=True,
+        tooltipShowDelay=500
+    )
+    
+    # Custom CSS
+    custom_css = {
+        ".ag-theme-streamlit": {
+            "font-family": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+            "font-size": "11px",
+            "--ag-border-color": "#dee2e6",
+            "--ag-header-background-color": "#f8f9fa",
+            "--ag-header-foreground-color": "#495057",
+            "--ag-borders": "solid",
+            "--ag-borders-critical": "solid"
+        },
+        ".ag-header-cell": {
+            "font-size": "10px",
+            "font-weight": "500",
+            "text-align": "center",
+            "border-right": "1px solid #dee2e6 !important",
+            "border-bottom": "1px solid #dee2e6 !important"
+        },
+        ".ag-cell": {
+            "line-height": "35px",
+            "border-right": "1px solid #dee2e6 !important",
+            "border-bottom": "1px solid #dee2e6 !important"
+        },
+        ".ag-header-group-cell": {
+            "border-right": "1px solid #dee2e6 !important",
+            "border-bottom": "1px solid #dee2e6 !important"
+        },
+        ".ag-root-wrapper": {
+            "border": "1px solid #dee2e6"
+        }
+    }
+    
+    # Create column definitions
+    columnDefs = [
+        {
+            'field': 'Employee Type',
+            'headerName': 'Employee Type',
+            'editable': False,
+            'cellStyle': first_col_style_jscode,
+            'width': 220,
+            'pinned': 'left'
+        }
+    ]
+    
+    # Add shift columns
+    view_mode = st.session_state.get('table_view_mode', 'Roster & Expected')
+    
+    # Use minimum widths to ensure readability while allowing dynamic sizing
+    for idx, shift_key in enumerate(columns_list):
+        parts = shift_key.split(' ')
+        date_str = parts[0]
+        day_abbr = parts[1]
+        shift_num = parts[-1]
+        
+        col_prefix = f'S{idx+1}'
+        
+        # Build children columns based on view mode
+        children_cols = []
+        
+        # Roster HC (always shown)
+        children_cols.append({
+            'field': f'{col_prefix}_Roster',
+            'headerName': 'Roster HC',
+            'editable': cell_editable_jscode,
+            'cellStyle': scheduled_cell_style_jscode,
+            'colSpan': col_span_jscode,
+            'valueFormatter': value_formatter_jscode,
+            'valueParser': value_parser_jscode,
+            'tooltipValueGetter': tooltip_value_getter,
+            'minWidth': 100,
+            'flex': 1
+        })
+        
+        # Attendance % (show in "Roster & Expected" and "All Columns" modes)
+        if view_mode in ['Roster & Expected', 'All Columns']:
+            children_cols.append({
+                'field': f'{col_prefix}_Attendance',
+                'headerName': 'Attendance Assumption',
+                'editable': False,
+                'cellStyle': data_cell_style_jscode,
+                'tooltipValueGetter': attendance_tooltip_value_getter,
+                'minWidth': 160,
+                'flex': 1.2
+            })
+        
+        # Expected HC (always shown)
+        children_cols.append({
+            'field': f'{col_prefix}_Expected',
+            'headerName': 'Expected HC',
+            'editable': False,
+            'cellStyle': data_cell_style_jscode,
+            'tooltipValueGetter': expected_tooltip_value_getter,
+            'minWidth': 110,
+            'flex': 1
+        })
+        
+        # Actual Punches (show in "Roster & Punches" and "All Columns" modes)
+        if view_mode in ['Roster & Punches', 'All Columns']:
+            children_cols.append({
+                'field': f'{col_prefix}_Punches',
+                'headerName': 'Actual Punches',
+                'editable': False,
+                'cellStyle': data_cell_style_jscode,
+                'minWidth': 120,
+                'flex': 1
+            })
+            
+            # Punch Variance (show in "Roster & Punches" and "All Columns" modes)
+            children_cols.append({
+                'field': f'{col_prefix}_Punch_Variance',
+                'headerName': 'Expected vs Actual Punches',
+                'editable': False,
+                'cellStyle': JsCode("""
+                function(params) {
+                    var style = {'text-align': 'center', 'font-size': '11px'};
+                    var variance = params.value;
+                    if (variance && variance !== 0 && variance !== '' && !isNaN(variance)) {
+                        if (variance > 0) {
+                            // Over-attendance (green)
+                            style['background-color'] = '#d4f4dd';
+                            style['color'] = '#2d6f2f';
+                            style['font-weight'] = '600';
+                        } else {
+                            // Under-attendance (red)
+                            style['background-color'] = '#ffd4d4';
+                            style['color'] = '#8b0000';
+                            style['font-weight'] = '600';
+                        }
+                    }
+                    return style;
+                }
+                """),
+                'valueFormatter': JsCode("""
+                function(params) {
+                    var val = params.value;
+                    if (val === '' || val === null || val === undefined || val === 0) {
+                        return '';
+                    }
+                    var sign = val > 0 ? '+' : '';
+                    return sign + val;
+                }
+                """),
+                'minWidth': 180,
+                'flex': 1.2
+            })
+        
+        columnDefs.append({
+            'headerName': f'{date_str} {day_abbr} - Shift {shift_num}',
+            'children': children_cols
+        })
+    
+    gridOptions = gb.build()
+    gridOptions['columnDefs'] = columnDefs
+    
+    # Calculate height - make it tall enough to show all rows without vertical scrolling
+    num_rows = len(employee_types)
+    # Header (45px) + rows (40px each for better readability) + padding (50px)
+    grid_height = 45 + (num_rows * 40) + 50
+    
+    # Calculate actual total Expected HC from the table (sum across all shifts)
+    total_row = df[df['Employee Type'] == 'Total Expected HC']
+    actual_total = 0
+    if not total_row.empty:
+        columns_list = sorted(list(filtered_hc_data.keys()))
+        for idx, shift_key in enumerate(columns_list):
+            col_prefix = f'S{idx+1}'
+            expected_col = f'{col_prefix}_Expected'
+            actual_total += total_row[expected_col].values[0]
+    
+    return df, gridOptions, custom_css, grid_height, int(actual_total)
+    """Create combined HC and Attendance Assumption table with color coding for variance"""
+    
+    
+    tooltip_css = """
+    <style>
+    .combined-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 12px;
+        margin: 10px 0;
+    }
+    .combined-table th {
+        background-color: #f1f1f1;
+        color: #2E4057;
+        font-weight: bold;
+        padding: 8px;
+        text-align: center;
+        border: 1px solid #ddd;
+        font-size: 11px;
+    }
+    .combined-table td {
+        padding: 6px 8px;
+        text-align: center;
+        border: 1px solid #ddd;
+        position: relative;
+        cursor: help;
+    }
+    .combined-table td.row-header {
+        background-color: #f9f9f9;
+        font-weight: bold;
+        text-align: left;
+        cursor: default;
+    }
+    .combined-table td.total-row {
+        background-color: #e8f4f8;
+        font-weight: bold;
+    }
+    .combined-table td.hedge-row {
+        font-weight: bold;
+        font-style: italic;
+    }
+    .combined-table td.row-header.hedge-row {
+        background-color: #fff3cd;
+    }
+    .hedge-input-container {
+        background-color: #fff3cd;
+        border: 1px solid #ddd;
+        padding: 6px 8px;
+        text-align: center;
+        font-size: 12px;
+        min-height: 35px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .variance-high {
+        background-color: #ffcccc !important;
+    }
+    .variance-medium {
+        background-color: #ffe6cc !important;
+    }
+    .variance-low {
+        background-color: #ffffcc !important;
+    }
+    .header-info {
+        font-size: 14px;
+        font-weight: bold;
+        padding: 10px;
+        background-color: #f9f9f9;
+        border-radius: 4px;
+    }
+    .legend {
+        font-size: 12px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        margin-top: 10px;
+    }
+    .legend-item {
+        display: inline-block;
+        margin-right: 20px;
+    }
+    .legend-color {
+        display: inline-block;
+        width: 15px;
+        height: 15px;
+        margin-right: 5px;
+        border: 1px solid #ddd;
+        vertical-align: middle;
+    }
+    .tooltip-text {
+        visibility: hidden;
+        background-color: #555;
+        color: #fff;
+        text-align: left;
+        border-radius: 6px;
+        padding: 8px;
+        position: absolute;
+        z-index: 1000;
+        bottom: 125%;
+        left: 50%;
+        margin-left: -100px;
+        width: 200px;
+        opacity: 0;
+        transition: opacity 0.3s;
+        font-size: 11px;
+        white-space: pre-line;
+        box-shadow: 0px 4px 8px rgba(0,0,0,0.2);
+    }
+    .combined-table td:hover .tooltip-text {
+        visibility: visible;
+        opacity: 1;
+    }
+    .tooltip-text::after {
+        content: "";
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        margin-left: -5px;
+        border-width: 5px;
+        border-style: solid;
+        border-color: #555 transparent transparent transparent;
+    }
+    </style>
+    """
+    
+    # Employee types in order
+    employee_types = [
+        'FTE',
+        'TEMP', 
+        'NEW HIRES',
+        'Day Labor (Flex)',
+        'Day Labor (WW/GS)',
+        'Overtime (VEH/MEH)',
+        'Time Off (VER/MTO)'
+    ]
+    
+    # Mapping to data keys
+    data_key_mapping = {
+        'FTE': 'FTE',
+        'TEMP': 'TEMP',
+        'NEW HIRES': 'NEW HIRES',
+        'Day Labor (Flex)': 'FLEX',
+        'Day Labor (WW/GS)': 'WW/GS',
+        'Overtime (VEH/MEH)': 'VEH/MEH',
+        'Time Off (VER/MTO)': 'PTO'
+    }
+    
+    attendance_key_mapping = {
+        'FTE': 'FTE Attendance Assumption',
+        'TEMP': 'TEMP Attendance Assumption',
+        'NEW HIRES': 'NEW HIRES Show Up Rate',
+        'Day Labor (Flex)': 'FLEX Show Up Rate',
+        'Day Labor (WW/GS)': 'WW/GS Show Up Rate',
+        'Overtime (VEH/MEH)': 'VEH Show Up Rate',
+        'Time Off (VER/MTO)': 'PTO Rate'
+    }
+    
+    columns = sorted(list(filtered_hc_data.keys()))
+    
+    # Build HTML
+    html_content = tooltip_css
+    
+    # Header with expected HC
+    # Remove header with expected HC - not needed
+    # html_content += f"<div class='header-info'>Expected Headcount ({expected_hc_total})</div>"
+    # Legend
+    html_content += "<div class='legend'>"
+    html_content += "<strong>Legend</strong><br>"
+    html_content += "<span class='legend-item'><span class='legend-color variance-high'></span>>20% variance from last week</span>"
+    html_content += "<span class='legend-item'><span class='legend-color variance-medium'></span>10-20% variance from last week</span>"
+    html_content += "</div>"
+    
+    # Table
+    html_content += "<table class='combined-table'>"
+    
+    # Header row
+    html_content += "<tr><th>Employee Type</th>"
+    for shift_key in columns:
+        parts = shift_key.split(' ')
+        date = parts[0]
+        day = parts[1]
+        shift_num = parts[-1]
+        html_content += f"<th colspan='2'>{date} {day}<br>Shift {shift_num}</th>"
+    html_content += "</tr>"
+    
+    # Sub-header row for Headcount / Attendance Assumption
+    html_content += "<tr><th></th>"
+    for _ in columns:
+        html_content += "<th>Scheduled<br>Headcount</th><th>Attendance<br>Assumption</th>"
+    html_content += "</tr>"
+    
+    # Data rows
+    for emp_type in employee_types:
+        html_content += "<tr>"
+        
+        # Add hyperlinks to specific row labels
+        if emp_type == 'Overtime (VEH/MEH)':
+            html_content += f"""<td class='row-header'>
+                <a href='https://example.com/overtime-details' 
+                   target='_blank'
+                   style='color: #2E4057; text-decoration: none; border-bottom: 1px dashed #2E4057;'
+                   title='View Overtime Details'>
+                    {emp_type} 🔗
+                </a>
+            </td>"""
+        elif emp_type == 'Day Labor (WW/GS)':
+            html_content += f"""<td class='row-header'>
+                <a href='https://example.com/day-labor-details' 
+                   target='_blank'
+                   style='color: #2E4057; text-decoration: none; border-bottom: 1px dashed #2E4057;'
+                   title='View Day Labor Details'>
+                    {emp_type} 🔗
+                </a>
+            </td>"""
+        else:
+            html_content += f"<td class='row-header'>{emp_type}</td>"
+        
+        data_key = data_key_mapping.get(emp_type, emp_type)
+        attendance_key = attendance_key_mapping.get(emp_type, f'{emp_type} Attendance Assumption')
+        
+        for shift_key in columns:
+            hc_data = filtered_hc_data.get(shift_key, {})
+            attendance_data = filtered_attendance_data.get(shift_key, {})
+            
+            # Get headcount value
+            hc_value = hc_data.get(data_key, 0)
+            
+            # Get attendance value
+            attendance_value = attendance_data.get(attendance_key, 'N/A')
+            
+            # Get tooltip for headcount
+            tooltip_hc = hc_data.get(f'tooltip_{data_key.lower()}', '+3% vs prev week')
+            
+            # Get tooltip for attendance
+            tooltip_attendance = attendance_data.get(f'tooltip_{data_key.lower()}', '+3% vs prev week')
+            
+           # Determine variance class by parsing the tooltip
+            variance_class = ''
+            if tooltip_hc and 'vs prev week' in tooltip_hc:
+                # Extract percentage from tooltip (e.g., "+15% vs prev week" -> 15)
+                import re
+                match = re.search(r'([+-]?\d+)%?\s*vs\s*prev\s*week', tooltip_hc)
+                if match:
+                    variance_pct = abs(int(match.group(1)))  # Get absolute value
+                    if variance_pct > 20:
+                        variance_class = 'variance-high'
+                    elif variance_pct >= 10:
+                        variance_class = 'variance-medium'
+           
+            # Headcount cell with variance color (if applicable)
+            if variance_class:
+                html_content += f"<td class='{variance_class}'>{hc_value}<span class='tooltip-text'>{tooltip_hc}</span></td>"
+            else:
+                html_content += f"<td>{hc_value}<span class='tooltip-text'>{tooltip_hc}</span></td>"
+            
+            # Attendance cell (no variance coloring)
+            html_content += f"<td>{attendance_value}<span class='tooltip-text'>{tooltip_attendance}</span></td>"
+        
+        html_content += "</tr>"
+    
+    # Hedge Attendance Rate row (display-only, shows current hedge values)
+    html_content += "<tr>"
+    html_content += "<td class='row-header'>Hedge Attendance Rate (+/-)</td>"
+    
+    for shift_key in columns:
+        # Extract date and shift from key (format: "2026-02-12 Thu Shift 1")
+        parts = shift_key.split(' ')
+        date_str = parts[0]
+        shift_num = parts[-1]
+        hedge_key = f"{date_str}_{shift_num}st"
+        
+        # Get hedge rate from session state
+        hedge_rate = st.session_state.hedge_rates.get(hedge_key, 0)
+        hedge_display = f"{hedge_rate:+.1f}%" if hedge_rate != 0 else "-"
+        
+        tooltip_hedge = f"Hedge rate for {date_str} Shift {shift_num}: {hedge_rate:+.1f}%<br>Click 'Edit Hedge Rates' below to modify"
+        
+        # Display hedge rate (spans 2 columns to match the table structure) - NO background color class
+        html_content += f"<td colspan='2' style='font-weight: bold; font-style: italic;'>{hedge_display}<span class='tooltip-text'>{tooltip_hedge}</span></td>"
+    
+    html_content += "</tr>"
+    
+    # Total row
+    html_content += "<tr>"
+    html_content += "<td class='row-header'>Total Expected HC</td>"
+    
+    for shift_key in columns:
+        hc_data = filtered_hc_data.get(shift_key, {})
+        attendance_data = filtered_attendance_data.get(shift_key, {})
+        
+        # Extract date and shift for hedge lookup
+        parts = shift_key.split(' ')
+        date_str = parts[0]
+        shift_num = parts[-1]
+        hedge_key = f"{date_str}_{shift_num}st"
+        hedge_rate = st.session_state.hedge_rates.get(hedge_key, 0)
+
+        
+
+        
+        # Calculate total Expected HC (Scheduled HC × (Attendance Assumption + Hedge))
+        total_expected_hc = 0
+        for emp_type in employee_types:
+            data_key = data_key_mapping.get(emp_type, emp_type)
+            attendance_key = attendance_key_mapping.get(emp_type, f'{emp_type} Attendance Assumption')
+            
+            # Get scheduled HC
+            scheduled_hc = hc_data.get(data_key, 0)
+            
+            # Get attendance assumption and convert percentage to decimal
+            attendance_str = attendance_data.get(attendance_key, '0%')
+            attendance_pct = float(attendance_str.rstrip('%')) / 100.0
+            
+            # Apply hedge rate only to FTE and TEMP (as per user requirement)
+            if emp_type in ['FTE', 'TEMP']:
+                hedged_attendance_pct = attendance_pct + (hedge_rate / 100.0)
+                # Clamp to valid range [0, 1]
+                hedged_attendance_pct = max(0, min(1, hedged_attendance_pct))
+            else:
+                hedged_attendance_pct = attendance_pct
+            
+            # Calculate expected HC for this employee type
+            total_expected_hc += scheduled_hc * hedged_attendance_pct
+        
+        # Round to nearest integer
+        total_expected_hc = round(total_expected_hc)
+        
+        html_content += f"<td class='total-row' colspan='2'>{total_expected_hc}</td>"
+
+    
+    html_content += "</tr>"
+    html_content += "</table>"
+    
+    return html_content
+
+
+
+def validate_and_adjust_hc_totals(filtered_hc_data, filtered_attendance_data, overview_expected, employee_types, data_key_mapping, attendance_key_mapping):
+    """Ensure HC table Expected HC totals match overview metrics exactly"""
+    if not filtered_hc_data or not filtered_attendance_data:
+        return filtered_hc_data
+    
+    # Calculate current total expected HC across all shifts
+    current_total = 0
+    for shift_key in filtered_hc_data.keys():
+        hc_data = filtered_hc_data[shift_key]
+        attendance_data = filtered_attendance_data[shift_key]
+        
+        for emp_type in employee_types:
+            data_key = data_key_mapping.get(emp_type, emp_type)
+            attendance_key = attendance_key_mapping.get(emp_type, f'{emp_type} Attendance Assumption')
+            
+            scheduled = hc_data.get(data_key, 0)
+            att_str = attendance_data.get(attendance_key, '0%')
+            att_pct = float(att_str.rstrip('%')) / 100.0
+            
+            current_total += scheduled * att_pct
+    
+    # Calculate adjustment ratio
+    if current_total > 0:
+        ratio = overview_expected / current_total
+    else:
+        return filtered_hc_data
+    
+    # Apply ratio uniformly to all scheduled HC values
+    adjusted_hc_data = {}
+    for shift_key, hc_data in filtered_hc_data.items():
+        adjusted_hc_data[shift_key] = hc_data.copy()
+        
+        for emp_type in employee_types:
+            data_key = data_key_mapping.get(emp_type, emp_type)
+            if data_key in hc_data:
+                adjusted_hc_data[shift_key][data_key] = int(round(hc_data[data_key] * ratio))
+    
+    return adjusted_hc_data
+
+def validate_and_adjust_totals(filtered_shift_data, overview_metrics, shifts):
+    """Ensure table totals match overview metrics"""
+    if not filtered_shift_data or not shifts:
+        return filtered_shift_data
+    
+    # Calculate current table totals
+    table_needed_total = sum(data['Total Needed'] for data in filtered_shift_data.values())
+    table_expected_total = sum(data['Total Expected'] for data in filtered_shift_data.values())
+    
+    # Get target totals from overview
+    target_needed = overview_metrics['needed']
+    target_expected = overview_metrics['expected']
+    
+    # Calculate adjustment ratios
+    needed_ratio = target_needed / table_needed_total if table_needed_total > 0 else 1
+    expected_ratio = target_expected / table_expected_total if table_expected_total > 0 else 1
+    
+    # Adjust each shift's values proportionally
+    adjusted_data = {}
+    for key, data in filtered_shift_data.items():
+        adjusted_data[key] = data.copy()
+        adjusted_data[key]['Total Needed'] = int(data['Total Needed'] * needed_ratio)
+        adjusted_data[key]['Total Expected'] = int(data['Total Expected'] * expected_ratio)
+        adjusted_data[key]['Total Gap'] = adjusted_data[key]['Total Expected'] - adjusted_data[key]['Total Needed']
+    
+    return adjusted_data
+
+def create_shift_breakdown_text(filtered_shift_data, selected_dates, shifts, metric_key, filtered_hc_data=None, filtered_attendance_data=None, overview_total=None):
+    """
+    Create shift breakdown text for each date and shift combination.
+    For 'Total Expected', calculates from HC data × attendance (matching the table).
+    For other metrics, distributes the overview_total proportionally across shifts.
+    
+    Args:
+        filtered_shift_data: Dict with keys like "2026-02-12 Thu Shift 1" containing metric values
+        selected_dates: List of selected date objects
+        shifts: List of selected shift strings (e.g., ["1st", "2nd"])
+        metric_key: The metric to display (e.g., 'Total Needed', 'Total Expected')
+        filtered_hc_data: HC data for calculating Expected HC
+        filtered_attendance_data: Attendance data for calculating Expected HC
+        overview_total: The total from overview KPIs to distribute proportionally
+    
+    Returns:
+        HTML string with breakdown by date and shift
+    """
+    if not filtered_shift_data or not selected_dates or not shifts:
+        return ""
+    
+    # Define mappings for Expected HC calculation
+    employee_types = ['FTE', 'TEMP', 'NEW HIRES', 'Day Labor (Flex)', 'Day Labor (WW/GS)', 'Overtime (VEH/MEH)', 'Time Off (VER/MTO)']
+    data_key_mapping = {
+        'FTE': 'FTE', 'TEMP': 'TEMP', 'NEW HIRES': 'NEW HIRES', 
+        'Day Labor (Flex)': 'FLEX', 'Day Labor (WW/GS)': 'WW/GS', 
+        'Overtime (VEH/MEH)': 'VEH/MEH', 'Time Off (VER/MTO)': 'PTO'
+    }
+    attendance_key_mapping = {
+        'FTE': 'FTE Attendance Assumption', 'TEMP': 'TEMP Attendance Assumption', 
+        'NEW HIRES': 'NEW HIRES Show Up Rate', 'Day Labor (Flex)': 'FLEX Show Up Rate', 
+        'Day Labor (WW/GS)': 'WW/GS Show Up Rate', 'Overtime (VEH/MEH)': 'VEH Show Up Rate', 
+        'Time Off (VER/MTO)': 'PTO Rate'
+    }
+    
+    # If overview_total is provided, calculate proportional distribution
+    if overview_total is not None:
+        # First, calculate the sum from filtered_shift_data to get proportions
+        shift_totals = {}
+        sum_from_data = 0
+        
+        for date in selected_dates:
+            date_str = date.strftime("%Y-%m-%d")
+            day_abbr = date.strftime("%a")
+            
+            for shift in shifts:
+                shift_num = shift[0]
+                key = f"{date_str} {day_abbr} Shift {shift_num}"
+                
+                if key in filtered_shift_data:
+                    value = filtered_shift_data[key].get(metric_key, 0)
+                    shift_totals[key] = value
+                    sum_from_data += value
+        
+        # Calculate proportional values that sum to overview_total
+        # Use absolute values for proportion calculation to handle negative gaps
+        shift_abs_totals = {k: abs(v) for k, v in shift_totals.items()}
+        sum_abs = sum(shift_abs_totals.values())
+        
+        breakdown_lines = []
+        for date in selected_dates:
+            date_str = date.strftime("%Y-%m-%d")
+            day_abbr = date.strftime("%a")
+            
+            shift_values = []
+            for shift in shifts:
+                shift_num = shift[0]
+                key = f"{date_str} {day_abbr} Shift {shift_num}"
+                
+                if key in shift_totals:
+                    # Proportionally distribute using absolute values
+                    if sum_abs > 0:
+                        proportion = shift_abs_totals[key] / sum_abs
+                        adjusted_value = round(overview_total * proportion)
+                    else:
+                        adjusted_value = 0
+                    shift_values.append(f"Shift {shift_num}: {adjusted_value}")
+            
+            if shift_values:
+                breakdown_lines.append(f"{day_abbr} {' | '.join(shift_values)}")
+        
+        return "<br>".join(breakdown_lines) if breakdown_lines else ""
+    
+    # Original logic for Expected HC
+    breakdown_lines = []
+    
+    for date in selected_dates:
+        date_str = date.strftime("%Y-%m-%d")
+        day_abbr = date.strftime("%a")  # e.g., "Thu", "Fri"
+        
+        shift_values = []
+        for shift in shifts:
+            # Extract shift number (e.g., "1st" -> "1")
+            shift_num = shift[0]
+            # Build the key to match the data structure
+            key = f"{date_str} {day_abbr} Shift {shift_num}"
+            
+            if key in filtered_shift_data:
+                # For Total Expected, calculate from HC × Attendance (matching table logic)
+                if metric_key == 'Total Expected' and filtered_hc_data and filtered_attendance_data:
+                    hc_data = filtered_hc_data.get(key, {})
+                    attendance_data = filtered_attendance_data.get(key, {})
+                    
+                    # Get hedge rate for this date/shift
+                    hedge_key = f"{date_str}_{shift_num}st"
+                    hedge_rate = st.session_state.hedge_rates.get(hedge_key, 0)
+                    
+                    total_expected_hc = 0
+                    for emp_type in employee_types:
+                        data_key = data_key_mapping.get(emp_type, emp_type)
+                        attendance_key = attendance_key_mapping.get(emp_type, f'{emp_type} Attendance Assumption')
+                        
+                        # Get scheduled HC
+                        scheduled_hc = hc_data.get(data_key, 0)
+                        
+                        # Get attendance assumption and convert percentage to decimal
+                        attendance_str = attendance_data.get(attendance_key, '0%')
+                        attendance_pct = float(attendance_str.rstrip('%')) / 100.0
+                        
+                        # Apply hedge rate only to FTE and TEMP (as per user requirement)
+                        if emp_type in ['FTE', 'TEMP']:
+                            hedged_attendance_pct = attendance_pct + (hedge_rate / 100.0)
+                            # Clamp to valid range [0, 1]
+                            hedged_attendance_pct = max(0, min(1, hedged_attendance_pct))
+                        else:
+                            hedged_attendance_pct = attendance_pct
+                        
+                        # Calculate expected HC for this employee type
+                        total_expected_hc += scheduled_hc * hedged_attendance_pct
+                    
+                    value = round(total_expected_hc)
+                else:
+                    # For other metrics, read from filtered_shift_data
+                    value = filtered_shift_data[key].get(metric_key, 0)
+                
+                shift_values.append(f"Shift {shift_num}: {value}")
+        
+        if shift_values:
+            breakdown_lines.append(f"{day_abbr} {' | '.join(shift_values)}")
+    
+    return "<br>".join(breakdown_lines) if breakdown_lines else ""
+
+def filter_employee_data_by_selections(employee_data, selected_department, selected_dates, shifts, worker_type_filter=None, employee_id_filter=None, schedule_filter=None, roster_bucket_filter=None):
+    """Filter employee data based on department, dates, shifts, and additional filters"""
+    filtered_employees = []
+    
+    # Convert shift format for comparison ("1st" -> "1st")
+    shift_filters = shifts if shifts else ["1st", "2nd", "3rd"]
+    
+    # Convert selected dates to string format for comparison
+    date_filters = [date.strftime("%Y-%m-%d") for date in selected_dates] if selected_dates else []
+    
+    for emp in employee_data:
+        # Check department match
+        dept_matches = (emp['Department'] == selected_department)
+        
+        # Check date match
+        date_matches = (emp['Date'] in date_filters) if date_filters else True
+        
+        # Check shift match
+        shift_matches = (emp['Shift'] in shift_filters) if shift_filters else True
+        
+        # Apply additional filters
+        worker_type_matches = (emp['Worker Type'] in worker_type_filter) if worker_type_filter else True
+        employee_id_matches = (employee_id_filter.upper() in emp['Employee ID'].upper()) if employee_id_filter else True
+        schedule_matches = (emp['Workday Schedule'] in schedule_filter) if schedule_filter else True
+        roster_bucket_matches = (emp['Roster Bucket'] in roster_bucket_filter) if roster_bucket_filter else True
+        
+        if dept_matches and date_matches and shift_matches and worker_type_matches and employee_id_matches and schedule_matches and roster_bucket_matches:
+            filtered_employees.append(emp)
+    
+    return filtered_employees
+
+
+def main():
+    # Header section - matching mockup layout
+    st.markdown('<h1 class="main-header">Labor Planning Shift Optimizer</h1>', unsafe_allow_html=True)
+    
+    # All filters at the top - Location, Department, Week, Date, Shift
+    col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 1.5])
+
+    
+    with col1:
+        st.markdown("**Location**")
+        location = st.selectbox("", ["AZ Goodyear", "IL Aurora", "AZ Phoenix", "IL Lake Zurich", "IL Burr Ridge"], 
+                               index=0, label_visibility="collapsed")
+
+    
+    
+    with col2:
+        st.markdown("**Department**")
+        selected_department = st.selectbox("", list(st.session_state.departments.keys()), 
+                                         index=0, label_visibility="collapsed")
+    
+    with col3:
+        st.markdown("**Week**")
+        week = st.selectbox("", ["2026-W08", "2026-W07", "2026-W09", "2026-W06", "2026-W10"], 
+                           index=0, label_visibility="collapsed")
+    
+    with col4:
+        st.markdown("**Date**")
+        available_dates = [
+            pd.to_datetime("2026-02-12"),
+            pd.to_datetime("2026-02-13"), 
+            pd.to_datetime("2026-02-14"),
+            pd.to_datetime("2026-02-15"),
+            pd.to_datetime("2026-02-16")
+        ]
+        selected_dates = st.multiselect(
+            "", 
+            available_dates,
+            default=[pd.to_datetime("2026-02-12")],
+            format_func=lambda x: x.strftime("%Y-%m-%d"),
+            label_visibility="collapsed"
+        )
+    
+    with col5:
+        st.markdown("**Shift**")
+        shifts = st.multiselect("", ["1st", "2nd", "3rd"], 
+                               default=["1st", "2nd", "3rd"], label_visibility="collapsed")
+
+
+    # Calculate dynamic metrics based on filter selections
+    primary_date = selected_dates[0] if selected_dates else pd.to_datetime("2026-02-12")
+    metrics = calculate_dynamic_metrics(location, selected_department, week, primary_date, shifts)
+    gap_status, gap_class, gap_color = get_gap_status_info(metrics["gap"], metrics["gap_percentage"])
+    show_alert = should_show_alert(metrics["gap"], metrics["gap_percentage"])
+    
+    # Generate dynamic data that actually varies by filters
+    if selected_dates and shifts:
+        filtered_shift_data, filtered_hc_data, filtered_attendance_data = generate_dynamic_table_data(
+            location, selected_department, week, selected_dates, shifts
+        )
+        
+        # Adjust shift data to match overview totals
+        filtered_shift_data = validate_and_adjust_totals(filtered_shift_data, metrics, shifts)
+        # Define mappings for HC validation
+
+        employee_types = ['FTE', 'TEMP', 'NEW HIRES', 'Day Labor (Flex)', 'Day Labor (WW/GS)', 'Overtime (VEH/MEH)', 'Time Off (VER/MTO)']
+
+        data_key_mapping = {'FTE': 'FTE', 'TEMP': 'TEMP', 'NEW HIRES': 'NEW HIRES', 'Day Labor (Flex)': 'FLEX', 'Day Labor (WW/GS)': 'WW/GS', 'Overtime (VEH/MEH)': 'VEH/MEH', 'Time Off (VER/MTO)': 'PTO'}
+
+        attendance_key_mapping = {'FTE': 'FTE Attendance Assumption', 'TEMP': 'TEMP Attendance Assumption', 'NEW HIRES': 'NEW HIRES Show Up Rate', 'Day Labor (Flex)': 'FLEX Show Up Rate', 'Day Labor (WW/GS)': 'WW/GS Show Up Rate', 'Overtime (VEH/MEH)': 'VEH Show Up Rate', 'Time Off (VER/MTO)': 'PTO Rate'}
+
+        
+
+        
+        # Calculate actual Expected HC from table data (sum across all shifts)
+        total_expected_hc = 0
+        for shift_key, hc_data in filtered_hc_data.items():
+            attendance_data = filtered_attendance_data.get(shift_key, {})
+            
+            # Extract date and shift for hedge lookup
+            parts = shift_key.split(' ')
+            date_str = parts[0]
+            shift_num = parts[-1]
+            hedge_key = f"{date_str}_{shift_num}st"
+            hedge_rate = st.session_state.hedge_rates.get(hedge_key, 0.0)
+            
+            # Ensure hedge_rate is numeric
+            try:
+                hedge_rate = float(hedge_rate)
+            except (ValueError, TypeError):
+                hedge_rate = 0.0
+            
+            for emp_type in employee_types:
+                data_key = data_key_mapping.get(emp_type, emp_type)
+                attendance_key = attendance_key_mapping.get(emp_type, f'{emp_type} Attendance Assumption')
+                scheduled_hc = hc_data.get(data_key, 0)
+                attendance_str = attendance_data.get(attendance_key, '0%')
+                attendance_pct = float(attendance_str.rstrip('%')) / 100.0
+                
+                # Apply hedge rate only to FTE and TEMP (as per user requirement)
+                if emp_type in ['FTE', 'TEMP']:
+                    hedged_attendance_pct = attendance_pct + (hedge_rate / 100.0)
+                    # Clamp to valid range [0, 1]
+                    hedged_attendance_pct = max(0, min(1, hedged_attendance_pct))
+                else:
+                    hedged_attendance_pct = attendance_pct
+                
+                # Time Off (VER/MTO) should be subtracted, not added
+                if emp_type == 'Time Off (VER/MTO)':
+                    total_expected_hc -= scheduled_hc * hedged_attendance_pct
+                else:
+                    total_expected_hc += scheduled_hc * hedged_attendance_pct
+        
+        # Override metrics with calculated Expected HC
+        metrics['expected'] = int(round(total_expected_hc))
+        
+        # Adjust Needed HC to be slightly higher than Expected HC (20-25% buffer)
+        # This represents the target staffing level to meet operational needs
+        import random
+        buffer_pct = random.uniform(1.20, 1.25)  # 20-25% higher
+        metrics['needed'] = int(round(metrics['expected'] * buffer_pct))
+        
+        metrics['gap'] = metrics['expected'] - metrics['needed']
+        metrics['gap_percentage'] = (metrics['gap'] / metrics['needed'] * 100) if metrics['needed'] > 0 else 0
+        gap_status, gap_class, gap_color = get_gap_status_info(metrics["gap"], metrics["gap_percentage"])
+        
+        
+        # Adjust HC data to match overview Expected HC total
+        filtered_hc_data = validate_and_adjust_hc_totals(filtered_hc_data, filtered_attendance_data, metrics['expected'], employee_types, data_key_mapping, attendance_key_mapping)
+        
+        # Filter employees - updated to use new structure
+        filtered_employees = filter_employee_data_by_selections(st.session_state.employee_data, selected_department, selected_dates, shifts)
+        
+        # Create shift breakdowns for each metric (moved inside if block)
+        try:
+            needed_breakdown = create_shift_breakdown_text(filtered_shift_data, selected_dates, shifts, 'Total Needed', overview_total=metrics["needed"])
+            expected_breakdown = create_shift_breakdown_text(filtered_shift_data, selected_dates, shifts, 'Total Expected', 
+                                                            filtered_hc_data=filtered_hc_data, 
+                                                            filtered_attendance_data=filtered_attendance_data)
+            gap_breakdown = create_shift_breakdown_text(filtered_shift_data, selected_dates, shifts, 'Total Needed', overview_total=abs(metrics["gap"]))
+            punches_breakdown = create_shift_breakdown_text(filtered_shift_data, selected_dates, shifts, 'Total Punches', overview_total=metrics["punches"])
+        except Exception as e:
+            # Fallback to empty breakdowns if there's an error
+            needed_breakdown = ""
+            expected_breakdown = ""
+            gap_breakdown = ""
+            punches_breakdown = ""
+            st.error(f"Error creating shift breakdowns: {str(e)}")
+        
+        # Pre-calculate table to get actual Expected HC total BEFORE displaying overview
+        try:
+            table_df, table_gridOptions, table_custom_css, table_grid_height, actual_expected_hc = create_combined_hc_attendance_aggrid_table(
+                filtered_hc_data, filtered_attendance_data, metrics["expected"]
+            )
+            # Update metrics with actual table total
+            metrics["expected"] = actual_expected_hc
+            
+            # Recalculate gap with corrected expected HC
+            metrics['gap'] = metrics['expected'] - metrics['needed']
+            metrics['gap_percentage'] = (metrics['gap'] / metrics['needed'] * 100) if metrics['needed'] > 0 else 0
+        except Exception as e:
+            st.error(f"Error calculating expected HC: {str(e)}")
+            table_df, table_gridOptions, table_custom_css, table_grid_height = None, None, None, None
+    else:
+        # Empty data if no selections
+        filtered_shift_data = {}
+        filtered_hc_data = {}
+        filtered_attendance_data = {}
+        filtered_employees = []
+        # Initialize empty breakdowns
+        needed_breakdown = ""
+        expected_breakdown = ""
+        gap_breakdown = ""
+        punches_breakdown = ""
+        # Initialize table variables
+        table_df, table_gridOptions, table_custom_css, table_grid_height = None, None, None, None
+    
+    # Weekly Overview section
+    st.markdown('<div class="section-header">Overview</div>', unsafe_allow_html=True)
+    
+    # Key metrics row - All three KPIs: Needed HC, Expected HC, Gap in HC
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        render_metric_with_tooltip("Needed HC", "Total required headcount")
+        st.markdown(f'<div class="metric-large">{metrics["needed"]}</div>', unsafe_allow_html=True)
+        # Dynamic change indicator
+        change_symbol = "&#8599;" if metrics["needed_change"] >= 0 else "&#8600;"
+        change_class = "metric-change-up" if metrics["needed_change"] >= 0 else "metric-change-down"
+        st.markdown(f'<div class="metric-change {change_class}">{change_symbol} {abs(metrics["needed_change"])}% vs last week</div>', unsafe_allow_html=True)
+        # Shift breakdown
+        if needed_breakdown:
+            st.markdown(f'<div class="shift-breakdown">{needed_breakdown}</div>', unsafe_allow_html=True)
+    
+    with col2:
+        render_metric_with_tooltip("Expected HC", "Expected headcount based on attendance")
+        st.markdown(f'<div class="metric-large">{metrics["expected"]}</div>', unsafe_allow_html=True)
+        # Dynamic change indicator  
+        change_symbol = "&#8599;" if metrics["expected_change"] >= 0 else "&#8600;"
+        change_class = "metric-change-up" if metrics["expected_change"] >= 0 else "metric-change-down"
+        st.markdown(f'<div class="metric-change {change_class}">{change_symbol} {abs(metrics["expected_change"])}% vs last week</div>', unsafe_allow_html=True)
+        # Shift breakdown
+        if expected_breakdown:
+            st.markdown(f'<div class="shift-breakdown">{expected_breakdown}</div>', unsafe_allow_html=True)
+    
+    with col3:
+        render_metric_with_tooltip("Gap in HC", "Expected - Needed")
+        st.markdown(f'<div class="metric-large" style="color: #d62728;">{abs(metrics["gap"])}</div>', unsafe_allow_html=True)
+        # Dynamic change indicator - similar to other metrics
+        gap_change = metrics.get("gap_change", 3)  # Default to 3% if not available
+        change_symbol = "&#8599;" if gap_change >= 0 else "&#8600;"
+        change_class = "metric-change-up" if gap_change >= 0 else "metric-change-down"
+        st.markdown(f'<div class="metric-change {change_class}">{change_symbol} {abs(gap_change)}% vs last week</div>', unsafe_allow_html=True)
+        # Shift breakdown
+        if gap_breakdown:
+            st.markdown(f'<div class="shift-breakdown">{gap_breakdown}</div>', unsafe_allow_html=True)
+    
+    with col4:
+        render_metric_with_tooltip("Punches", "Total attendance punches")
+        punches_value = metrics.get("punches", 0)
+        st.markdown(f'<div class="metric-large">{punches_value}</div>', unsafe_allow_html=True)
+        
+        # Dynamic change indicator
+        punches_change = metrics.get("punches_change", 4)  # Default to 4% if not available
+        change_symbol = "&#8599;" if punches_change >= 0 else "&#8600;"
+        change_class = "metric-change-up" if punches_change >= 0 else "metric-change-down"
+        st.markdown(f'<div class="metric-change {change_class}">{change_symbol} {abs(punches_change)}% vs last week</div>', unsafe_allow_html=True)
+        # Shift breakdown
+        if punches_breakdown:
+            st.markdown(f'<div class="shift-breakdown">{punches_breakdown}</div>', unsafe_allow_html=True)
+    # Department Details section
+    st.markdown(f'<div class="section-header">{selected_department} Expected HC ({metrics["expected"]})</div>', unsafe_allow_html=True)
+    
+    # Legend
+    st.markdown("""
+    <div style="display: flex; gap: 20px; margin: 10px 0 20px 0; font-size: 13px; color: #666;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 20px; height: 20px; border: 2px solid #cc0000; background-color: #ff4444;"></div>
+            <span>🔴 <strong>Critical</strong> (>20% variance)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <div style="width: 20px; height: 20px; border: 2px solid #cc6600; background-color: #ff9933;"></div>
+            <span>🟠 <strong>High</strong> (10-20% variance)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span>💡 Hover any cell to see <strong>absolute HC changes</strong> and cohort breakdown</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <span>✏️ Click cells in the hedge row to edit (type 10 or -5, % added automatically)</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # View mode toggle
+    st.markdown("**Table View:**")
+    view_col1, view_col2 = st.columns([1, 3])
+    with view_col1:
+        view_mode = st.selectbox(
+            "Select view mode",
+            options=['Roster & Expected', 'Roster & Punches', 'All Columns'],
+            index=['Roster & Expected', 'Roster & Punches', 'All Columns'].index(st.session_state.get('table_view_mode', 'Roster & Expected')),
+            key='table_view_selector',
+            label_visibility='collapsed'
+        )
+        
+        # Update session state if changed
+        if st.session_state.table_view_mode != view_mode:
+            st.session_state.table_view_mode = view_mode
+            st.rerun()
+    
+    with view_col2:
+        # Display view description
+        view_descriptions = {
+            'Roster & Expected': '📋 Planning mode: Roster HC, Attendance Assumption, and Expected HC',
+            'Roster & Punches': '📊 Analysis mode: Roster HC, Expected HC, Actual Punches, and Expected vs Actual',
+            'All Columns': '📈 Comprehensive view: All data columns'
+        }
+        st.markdown(f"<div style='padding-top: 8px; color: #666; font-size: 13px;'>{view_descriptions[view_mode]}</div>", unsafe_allow_html=True)
+    
+    # Create AG-Grid table (use pre-calculated values)
+    # Add helpful note for many columns
+    if table_df is not None and len(filtered_hc_data.keys()) > 6:
+        st.markdown("*Hover over cells to see detailed breakdowns and comparisons. Scroll horizontally to see all shifts →*")
+    else:
+        st.markdown("*Hover over cells to see detailed breakdowns and comparisons*")
+    
+    if table_df is not None:
+        grid_response = AgGrid(
+            table_df,
+            gridOptions=table_gridOptions,
+            update_mode=GridUpdateMode.VALUE_CHANGED,
+            data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
+            fit_columns_on_grid_load=False,
+            theme='streamlit',
+            height=table_grid_height,
+            allow_unsafe_jscode=True,
+            custom_css=table_custom_css,
+            reload_data=False
+        )
+        
+        # Update hedge rates from edited table
+        updated_df = grid_response['data']
+        hedge_row = updated_df[updated_df['Employee Type'].str.contains('Hedge Attendance Rate', na=False)]
+    
+    if not hedge_row.empty:
+        columns_list = sorted(list(filtered_hc_data.keys()))
+        hedge_changed = False
+        
+        for idx, shift_key in enumerate(columns_list):
+            parts = shift_key.split(' ')
+            date_str = parts[0]
+            shift_num = parts[-1]
+            hedge_key = f"{date_str}_{shift_num}st"
+            
+            col_name = f'S{idx+1}_Roster'
+            new_hedge = hedge_row[col_name].values[0]
+            
+            # Ensure new_hedge is a number (convert if string or other type)
+            try:
+                new_hedge = float(new_hedge) if new_hedge is not None else 0.0
+            except (ValueError, TypeError):
+                new_hedge = 0.0
+            
+            old_hedge = st.session_state.hedge_rates.get(hedge_key, 0.0)
+            
+            if new_hedge != old_hedge:
+                st.session_state.hedge_rates[hedge_key] = new_hedge
+                hedge_changed = True
+        
+        if hedge_changed:
+            st.rerun()
+    
+    st.markdown(f'<div class="section-header">{selected_department} Roster Details</div>', unsafe_allow_html=True)
+    
+    # Employee List Filters
+    st.markdown("**Filter Results:**")
+    emp_col1, emp_col2, emp_col3 = st.columns(3)
+    
+    # Convert filtered_employees list to DataFrame for easier filtering
+    if filtered_employees:
+        emp_df = pd.DataFrame(filtered_employees)
+    else:
+        emp_df = pd.DataFrame()
+    
+    with emp_col1:
+        if not emp_df.empty:
+            worker_type_options = ["All"] + sorted(emp_df["Worker Type"].unique().tolist())
+        else:
+            worker_type_options = ["All"]
+        worker_type_filter = st.selectbox("Worker Type", worker_type_options)
+        
+    with emp_col2:
+        if not emp_df.empty:
+            schedule_options = ["All"] + sorted(emp_df["Workday Schedule"].unique().tolist())
+        else:
+            schedule_options = ["All"]
+        schedule_filter = st.selectbox("Workday Schedule", schedule_options)
+        
+    with emp_col3:
+        if not emp_df.empty:
+            roster_options = ["All"] + sorted(emp_df["Roster Bucket"].unique().tolist())
+        else:
+            roster_options = ["All"]
+        roster_filter = st.selectbox("Roster Bucket", roster_options)
+    
+    # Apply filters
+    filtered_emp_df = emp_df.copy()
+    if worker_type_filter != "All":
+        filtered_emp_df = filtered_emp_df[filtered_emp_df["Worker Type"] == worker_type_filter]
+    if schedule_filter != "All":
+        filtered_emp_df = filtered_emp_df[filtered_emp_df["Workday Schedule"] == schedule_filter]
+    if roster_filter != "All":
+        filtered_emp_df = filtered_emp_df[filtered_emp_df["Roster Bucket"] == roster_filter]
+    
+    # CSV Download button
+    if not filtered_emp_df.empty:
+        csv = filtered_emp_df.to_csv(index=False).encode('utf-8')
+        st.download_button(
+            label="Download Employee List as CSV",
+            data=csv,
+            file_name=f"{selected_department}_employee_list.csv",
+            mime="text/csv",
+            key='download-csv'
+        )
+    
+    # Employee details table
+    fig = create_employee_details_table_with_tooltips(selected_department, filtered_emp_df.to_dict('records') if not filtered_emp_df.empty else [])
+    #     st.error(f"âš ï¸ {selected_department} is understaffed by {abs(gap)} people")
+    # elif gap > 0:
+    #     st.success(f"âœ… {selected_department} has {gap} extra people")
+    # else:
+    #     st.info(f"âœ… {selected_department} staffing is balanced")
+
+    # Employee details table
+    fig = create_employee_details_table_with_tooltips(selected_department, filtered_emp_df.to_dict('records') if not filtered_emp_df.empty else [])
+    if fig:
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("No employee data available for this department.")
+    
+    # Footer - matching mockup pagination
+    st.markdown("---")
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        st.markdown('<div style="text-align: center; color: #666;">-- 1 of 1 --</div>', unsafe_allow_html=True)
+    
+    st.markdown("**Labor Planning Shift Optimizer** | Data as of " + datetime.now().strftime("%Y-%m-%d %H:%M"))
+
+if __name__ == "__main__":
+    main()
+
+
+
+
